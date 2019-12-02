@@ -35,6 +35,12 @@ public class AdventOfCode2019 {
             case 2:
                 result = challengeTwo(input);
                 break;
+            case 3:
+                result = challengeThree(input);
+                break;
+            case 4:
+                result = challengeFour(input);
+                break;
             default:
                 System.out.println("lolno");
         }
@@ -62,5 +68,57 @@ public class AdventOfCode2019 {
             }
         }
         return fuelRequired;
+    }
+
+    private static int challengeThree(List<String> input) {
+        String[] numbers = input.get(0).split(",");
+        int[] program = new int[numbers.length];
+        for (int i = 0; i < numbers.length; i++) {
+            program[i] = Integer.parseInt(numbers[i]);
+        }
+        program[1] = 12;
+        program[2] = 2;
+        program = Intcode.runProgram(program);
+        return program[0];
+    }
+
+    private static int challengeFour(List<String> input) {
+        String[] numbers = input.get(0).split(",");
+        int[] originalProgram = new int[numbers.length], returnedProgram;
+        int deltaNoun, deltaVerb, doubleZeroReturn, nounOneReturn, verbOneReturn;
+        int targetReturn = 19690720, properNoun, properVerb;
+        for (int i = 0; i < numbers.length; i++) {
+            originalProgram[i] = Integer.parseInt(numbers[i]);
+        }
+        //The joke here is that both arguments increase the return value linearly.
+        //Thus, suss out what the delta values are, then use math instead of loops.
+        //Step 1: Get return value for 00
+        returnedProgram = originalProgram.clone();
+        returnedProgram = Intcode.runProgram(returnedProgram);
+        doubleZeroReturn = returnedProgram[0];
+
+        //Step 2: Get return value for noun = 1
+        returnedProgram = originalProgram.clone();
+        returnedProgram[1] = 1;
+        returnedProgram = Intcode.runProgram(returnedProgram);
+        nounOneReturn = returnedProgram[0];
+
+        //Step 3: Get return value for verb = 1
+        returnedProgram = originalProgram.clone();
+        returnedProgram[2] = 1;
+        returnedProgram = Intcode.runProgram(returnedProgram);
+        verbOneReturn = returnedProgram[0];
+
+        deltaNoun = nounOneReturn - doubleZeroReturn;
+        deltaVerb = verbOneReturn - doubleZeroReturn;
+
+        //Noun has a larger effect, such that the value of verb can be disregarded
+        //while determining the value of verb. Alternatively, one could determine
+        //both values the same way, then modulo 100 in order to put them into the
+        //useful range.
+        //As it happens deltaVerb = 1, but let's pretend it doesn't.
+        properNoun = (targetReturn - doubleZeroReturn) / deltaNoun;
+        properVerb = (targetReturn - doubleZeroReturn - properNoun * deltaNoun) / deltaVerb;
+        return 100 * properNoun + properVerb;
     }
 }
