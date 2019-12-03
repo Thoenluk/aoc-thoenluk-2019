@@ -7,6 +7,8 @@ package adventofcode2019;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
 
@@ -40,6 +42,12 @@ public class AdventOfCode2019 {
                 break;
             case 4:
                 result = challengeFour(input);
+                break;
+            case 5:
+                result = challengeFive(input);
+                break;
+            case 6:
+                result = challengeSix(input);
                 break;
             default:
                 System.out.println("lolno");
@@ -120,5 +128,113 @@ public class AdventOfCode2019 {
         properNoun = (targetReturn - doubleZeroReturn) / deltaNoun;
         properVerb = (targetReturn - doubleZeroReturn - properNoun * deltaNoun) / deltaVerb;
         return 100 * properNoun + properVerb;
+    }
+
+    private static int challengeFive(List<String> input) {
+        String[] instructions;
+        HashMap<Integer, HashSet<Integer>> firstVisitedCoordinates = new HashMap<>();
+        firstVisitedCoordinates.put(0, new HashSet<>());
+        HashSet<int[]> crossings = new HashSet<>();
+        int x, y, distance, index = 0;
+        char direction;
+        for (String wire : input) {
+            instructions = wire.split(",");
+            x = 0;
+            y = 0;
+            index++;
+            for (int i = 0; i < instructions.length; i++) {
+                distance = Integer.parseInt(instructions[i].substring(1));
+                direction = instructions[i].charAt(0);
+                for (int j = 1; j <= distance; j++) {
+                    switch (direction) {
+                        case 'U':
+                            y++;
+                            break;
+                        case 'R':
+                            x++;
+                            break;
+                        case 'L':
+                            x--;
+                            break;
+                        case 'D':
+                            y--;
+                            break;
+                    }
+                    if (index == 1) {
+                        if (!firstVisitedCoordinates.containsKey(x)) {
+                            firstVisitedCoordinates.put(x, new HashSet<>());
+                        }
+                        firstVisitedCoordinates.get(x).add(y);
+                    } else if (firstVisitedCoordinates.containsKey(x)
+                            && firstVisitedCoordinates.get(x).contains(y)) {
+                        crossings.add(new int[]{x, y});
+                    }
+                }
+            }
+        }
+        int manhattanDistance = Integer.MAX_VALUE;
+        int currentDistance;
+        for (int[] currentCrossing : crossings) {
+            currentDistance = Math.abs(currentCrossing[0]) + Math.abs(currentCrossing[1]);
+            if (currentDistance < manhattanDistance) {
+                manhattanDistance = currentDistance;
+                System.out.println(currentCrossing[0] + " " + currentCrossing[1]);
+            }
+        }
+        return manhattanDistance;
+    }
+
+    private static int challengeSix(List<String> input) {
+        String[] instructions;
+        HashMap<Integer, HashMap<Integer, Integer>> visitedCoordinates = new HashMap<>();
+        visitedCoordinates.put(0, new HashMap<>());
+        HashSet<int[]> crossings = new HashSet<>();
+        int x, y, distance, index = 0, stepsTaken;
+        char direction;
+        for (String wire : input) {
+            instructions = wire.split(",");
+            x = 0;
+            y = 0;
+            index++;
+            stepsTaken = 0;
+            for (int i = 0; i < instructions.length; i++) {
+                distance = Integer.parseInt(instructions[i].substring(1));
+                direction = instructions[i].charAt(0);
+                for (int j = 1; j <= distance; j++) {
+                    switch (direction) {
+                        case 'U':
+                            y++;
+                            break;
+                        case 'R':
+                            x++;
+                            break;
+                        case 'L':
+                            x--;
+                            break;
+                        case 'D':
+                            y--;
+                            break;
+                    }
+                    stepsTaken++;
+                    if (index == 1) {
+                        if (!visitedCoordinates.containsKey(x)) {
+                            visitedCoordinates.put(x, new HashMap<>());
+                        }
+                        if (!visitedCoordinates.get(x).containsKey(y)) {
+                            visitedCoordinates.get(x).put(y, stepsTaken);
+                        }
+
+                    } else if (visitedCoordinates.containsKey(x)
+                            && visitedCoordinates.get(x).containsKey(y)) {
+                        crossings.add(new int[]{x, y, stepsTaken + visitedCoordinates.get(x).get(y)});
+                    }
+                }
+            }
+        }
+        stepsTaken = Integer.MAX_VALUE;
+        for (int[] currentCrossing : crossings) {
+            stepsTaken = currentCrossing[2] < stepsTaken ? currentCrossing[2] : stepsTaken;
+        }
+        return stepsTaken;
     }
 }
