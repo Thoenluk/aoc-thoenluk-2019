@@ -49,6 +49,12 @@ public class AdventOfCode2019 {
             case 6:
                 result = challengeSix(input);
                 break;
+            case 7:
+                result = challengeSeven(input, false);
+                break;
+            case 8:
+                result = challengeSeven(input, true);
+                break;
             default:
                 System.out.println("lolno");
         }
@@ -236,5 +242,56 @@ public class AdventOfCode2019 {
             stepsTaken = currentCrossing[2] < stepsTaken ? currentCrossing[2] : stepsTaken;
         }
         return stepsTaken;
+    }
+
+    private static int challengeSeven(List<String> input, boolean noLargeGroups) {
+        String[] limits = input.get(0).split("-");
+        int min = Integer.parseInt(limits[0]);
+        int max = Integer.parseInt(limits[1]);
+        int passwords = 0, i, j;
+        boolean hasDouble, noDecrease;
+        int[] numberLilEndian = new int[limits[1].length()];
+        HashMap<Integer, Integer> occurences = new HashMap<>();
+        //Given that the conditions are more stringent towards the end of the
+        //number (more digits to be less than), using the number in reverse order
+        //allows for a more intuitive forward-reading check with efficiency.
+        for (i = 0; i < limits[0].length(); i++) {
+            numberLilEndian[i] = (int) (min / Math.pow(10, i)) % 10;
+        }
+        for (i = min; i <= max; i++) {
+            hasDouble = false;
+            noDecrease = true;
+            occurences.clear();
+            for (j = 0; j < numberLilEndian.length; j++) {
+                if (j < numberLilEndian.length - 1 && numberLilEndian[j] < numberLilEndian[j + 1]) {
+                    noDecrease = false;
+                    break;
+                }
+                if (!occurences.containsKey(numberLilEndian[j])) {
+                    occurences.put(numberLilEndian[j], 1);
+                } else {
+                    occurences.put(numberLilEndian[j], occurences.get(numberLilEndian[j]) + 1);
+                }
+            }
+            if (noLargeGroups) {
+                hasDouble = occurences.containsValue(2);
+            } else {
+                for (Integer occurence : occurences.values()) {
+                    hasDouble = hasDouble || occurence >= 2;
+                }
+            }
+            if (hasDouble && noDecrease) {
+                passwords++;
+            }
+            for (j = 0; j < numberLilEndian.length; j++) {
+                numberLilEndian[j]++;
+                if (numberLilEndian[j] == 10) {
+                    numberLilEndian[j] = 0;
+                } else {
+                    break;
+                }
+            }
+        }
+        return passwords;
     }
 }
