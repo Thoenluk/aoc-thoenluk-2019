@@ -287,6 +287,41 @@ public class AdventOfCode2019 {
                 numberLilEndian[j]++;
                 if (numberLilEndian[j] == 10) {
                     numberLilEndian[j] = 0;
+                    /*At this point, a small aside on how my choice of number
+                    representation has come to bite me.
+
+                    While keeping the number in this per-digit form does allow
+                    for very fast processing rather than copying an int (say, i)
+                    into an array with a dozen mods and powers and divisions each
+                    time, it does mean that I have no idea about the value of the
+                    number at any given time, without reclaiming it into int form
+                    through an equally lengthy process.
+
+                    This means that I can't very well optimise further. It should
+                    be obvious that 0 will never appear in a password, as numbers
+                    can't start with 0 and digits must grow or be equal to their left.
+                    This makes 1 the least value any digit in a password can have.
+                    Logically, one could then skip past 0 while incrementing the
+                    number and write 1 rather than 0 to a wrapping digit. Or, if
+                    especially fancy, keep track of the least permissible value
+                    for a digit and write that instead, potentially skipping
+                    several tens of thousands of values at a time even with six-
+                    -digit passwords.
+
+                    However. I can't easily keep track of how many numbers I skip
+                    without performing expensive operations. The simplest I can
+                    think of is to keep the max value in the same array form and
+                    compare digit by digit on each number actually evaluated.
+                    Doing that would allow me to terminate the algorithm after
+                    the proper amount of number space has been checked. As I
+                    currently count the number of checks done, skipping any
+                    numbers hugely falsifies the result.
+
+                    That has a time complexity of O(n*k), with n being the length
+                    of the input numbers and k being their difference. It's quite
+                    possible that doing it would beat the current algorithm on
+                    large inputs and relatively large k values especially. I have
+                    not done any benchmarking to test this.*/
                 } else {
                     break;
                 }
