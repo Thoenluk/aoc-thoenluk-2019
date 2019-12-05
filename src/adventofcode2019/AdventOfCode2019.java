@@ -55,6 +55,12 @@ public class AdventOfCode2019 {
             case 8:
                 result = challengeSeven(input, true);
                 break;
+            case 9:
+                result = challengeNine(input);
+                break;
+            case 10:
+                result = challengeNine(input);
+                break;
             default:
                 System.out.println("lolno");
         }
@@ -92,7 +98,7 @@ public class AdventOfCode2019 {
         }
         program[1] = 12;
         program[2] = 2;
-        program = Intcode.runProgram(program);
+        program = Intcode.runSimpleProgram(program);
         return program[0];
     }
 
@@ -108,19 +114,19 @@ public class AdventOfCode2019 {
         //Thus, suss out what the delta values are, then use math instead of loops.
         //Step 1: Get return value for 00
         returnedProgram = originalProgram.clone();
-        returnedProgram = Intcode.runProgram(returnedProgram);
+        returnedProgram = Intcode.runSimpleProgram(returnedProgram);
         doubleZeroReturn = returnedProgram[0];
 
         //Step 2: Get return value for noun = 1
         returnedProgram = originalProgram.clone();
         returnedProgram[1] = 1;
-        returnedProgram = Intcode.runProgram(returnedProgram);
+        returnedProgram = Intcode.runSimpleProgram(returnedProgram);
         nounOneReturn = returnedProgram[0];
 
         //Step 3: Get return value for verb = 1
         returnedProgram = originalProgram.clone();
         returnedProgram[2] = 1;
-        returnedProgram = Intcode.runProgram(returnedProgram);
+        returnedProgram = Intcode.runSimpleProgram(returnedProgram);
         verbOneReturn = returnedProgram[0];
 
         deltaNoun = nounOneReturn - doubleZeroReturn;
@@ -328,5 +334,15 @@ public class AdventOfCode2019 {
             }
         }
         return passwords;
+    }
+
+    private static int challengeNine(List<String> input) {
+        String[] numbers = input.get(0).split(",");
+        int[] program = new int[numbers.length];
+        for (int i = 0; i < numbers.length; i++) {
+            program[i] = Integer.parseInt(numbers[i]);
+        }
+        program = Intcode.runProgram(program);
+        return 0;
     }
 }
