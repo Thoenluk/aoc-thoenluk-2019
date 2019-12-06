@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
 
@@ -60,6 +61,12 @@ public class AdventOfCode2019 {
                 break;
             case 10:
                 result = challengeNine(input);
+                break;
+            case 11:
+                result = challengeEleven(input);
+                break;
+            case 12:
+                result = challengeTwelve(input);
                 break;
             default:
                 System.out.println("lolno");
@@ -344,5 +351,85 @@ public class AdventOfCode2019 {
         }
         program = Intcode.runProgram(program);
         return 0;
+    }
+
+    private static int challengeEleven(List<String> input) {
+        HashMap<String, List<String>> orbits = new HashMap<>();
+        String[] objects;
+        for (String relation : input) {
+            objects = relation.split("\\)");
+            if (!orbits.containsKey(objects[0])) {
+                orbits.put(objects[0], new LinkedList<>());
+            }
+            orbits.get(objects[0]).add(objects[1]);
+        }
+
+        LinkedList<Integer> nextIndex = new LinkedList<>();
+        LinkedList<String> route = new LinkedList<>();
+        String position = "COM";
+        int totalOrbits = 0, depth = 0;
+        nextIndex.add(0);
+        route.add(position);
+        while (!nextIndex.isEmpty()) {
+            if (orbits.containsKey(position) && nextIndex.getLast() < orbits.get(position).size()) {
+                position = orbits.get(position).get(nextIndex.getLast());
+                nextIndex.add(nextIndex.removeLast() + 1);
+                depth++;
+                totalOrbits += depth;
+                route.add(position);
+                nextIndex.add(0);
+            } else {
+                route.removeLast();
+                if (!route.isEmpty()) {
+                    position = route.peekLast();
+                }
+                nextIndex.removeLast();
+                depth--;
+            }
+        }
+        return totalOrbits;
+    }
+
+    private static int challengeTwelve(List<String> input) {
+        HashMap<String, String> orbits = new HashMap<>();
+        String[] objects;
+        for (String relation : input) {
+            objects = relation.split("\\)");
+            orbits.put(objects[1], objects[0]);
+            //I admit this is slightly mounting the christmas tree on the ceiling,
+            //but there's no need to have a fully connected tree in this problem.
+            //Since every node has exactly one parent there is no need for a list.
+        }
+        LinkedList<String> myRoute = new LinkedList<>();
+        HashSet<String> myRouteSet = new HashSet<>();
+        LinkedList<String> santaRoute = new LinkedList<>();
+        HashSet<String> santaRouteSet = new HashSet<>();
+        String me = "YOU";
+        String santa = "SAN";
+        //Basic idea here: Since this orbital construct is a tree, we know that
+        //the two nodes have exactly one common ancestor, and exactly one parent.
+        //As such, traverse up the tree instead of down until an ancestor is present
+        //in both routes, then prune the length down to this shared ancestor since
+        //one route will probably be longer than the other, continuing upwards
+        //aimlessly.
+        //The Sets are not strictly necessary, but serve to give faster checks
+        //for whether a node is present in the other route. O(1) is good.
+        //Notably this has absolutely no protection against running over the root
+        //of the tree and crashing horribly. But that didn't happen so hooray.
+        while (true) {
+            me = orbits.get(me);
+            myRoute.add(me);
+            myRouteSet.add(me);
+            santa = orbits.get(santa);
+            santaRoute.add(santa);
+            santaRouteSet.add(santa);
+            if (myRouteSet.contains(santa)) {
+                break;
+            } else if (santaRouteSet.contains(me)) {
+                santa = me; //This line amuses me.
+                break;
+            }
+        }
+        return myRoute.indexOf(santa) + santaRoute.indexOf(santa);
     }
 }
