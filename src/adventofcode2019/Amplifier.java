@@ -1,44 +1,39 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
 package adventofcode2019;
+
+import java.util.LinkedList;
 
 /**
  *
  * @author Lukas Thöni <Lukas.thoeni@gmx.ch>
  */
-public class Intcode {
+public class Amplifier {
 
-    private static int[] program;
-    private static int instPointer;
-    private static InputFunction input;
-    private static OutputFunction output;
+    private int[] program, originalProgram;
+    private int instPointer = 0;
+    private LinkedList<Integer> inputBuffer;
+    private final LinkedList<Integer> outputBuffer = new LinkedList<>();
+    private final int[] argsByOpcode = new int[100];
 
-    public static int[] runSimpleProgram(int[] program) {
-        boolean stop = false;
-        int i = 0, valuesUsed;
-        while (!stop && i < program.length) {
-            switch (program[i]) {
-                case 1:
-                    program[program[i + 3]] = program[program[i + 1]] + program[program[i + 2]];
-                    valuesUsed = 4;
-                    break;
-                case 2:
-                    program[program[i + 3]] = program[program[i + 1]] * program[program[i + 2]];
-                    valuesUsed = 4;
-                    break;
-                default:
-                    stop = true;
-                    valuesUsed = 1;
-                    break;
-            }
-            i += valuesUsed;
-        }
-        return program;
+    public Amplifier(int[] program) {
+        this.program = program;
+        this.originalProgram = program.clone();
+        argsByOpcode[1] = 3;
+        argsByOpcode[2] = 3;
+        argsByOpcode[3] = 1;
+        argsByOpcode[4] = 1;
+        argsByOpcode[5] = 2;
+        argsByOpcode[6] = 2;
+        argsByOpcode[7] = 3;
+        argsByOpcode[8] = 3;
+        argsByOpcode[99] = 0;
     }
 
-    public static int[] runProgram(int[] argProgram, InputFunction in, OutputFunction out) {
-        program = argProgram;
-        instPointer = 0;
-        input = in;
-        output = out;
+    public boolean runProgram() {
         int opcode, j;
         int[] args = new int[3];
         boolean[] argIsPos = new boolean[3]; //They certainly are.
@@ -49,17 +44,7 @@ public class Intcode {
         //opcode will be executed and which arguments are actually write positions.
         //In the interest of modular code, give the modes to the function that will
         //know how to interpret the arguments.
-        boolean stop = false, instPointerModified = false;
-        int[] argsByOpcode = new int[100];
-        argsByOpcode[1] = 3;
-        argsByOpcode[2] = 3;
-        argsByOpcode[3] = 1;
-        argsByOpcode[4] = 1;
-        argsByOpcode[5] = 2;
-        argsByOpcode[6] = 2;
-        argsByOpcode[7] = 3;
-        argsByOpcode[8] = 3;
-        argsByOpcode[99] = 0;
+        boolean stop = false, instPointerModified;
         while (!stop && instPointer < program.length) {
             instPointerModified = false;
             opcode = program[instPointer] % 100;
@@ -79,6 +64,7 @@ public class Intcode {
                     break;
                 case 4:
                     output(args, argIsPos);
+                    stop = true;
                     break;
                 case 5:
                     instPointerModified = jumpIfTrue(args, argIsPos);
@@ -93,38 +79,37 @@ public class Intcode {
                     equalTo(args, argIsPos);
                     break;
                 case 99:
-                    stop = true;
-                    break;
+                    return true;
             }
             if (!instPointerModified) {
                 instPointer += argsByOpcode[opcode] + 1;
             }
         }
-        return program;
+        return false;
     }
 
-    private static void add(int[] args, boolean[] argIsPos) {
+    private void add(int[] args, boolean[] argIsPos) {
         args[0] = argIsPos[0] ? program[args[0]] : args[0];
         args[1] = argIsPos[1] ? program[args[1]] : args[1];
         program[args[2]] = args[0] + args[1];
     }
 
-    private static void mult(int[] args, boolean[] argIsPos) {
+    private void mult(int[] args, boolean[] argIsPos) {
         args[0] = argIsPos[0] ? program[args[0]] : args[0];
         args[1] = argIsPos[1] ? program[args[1]] : args[1];
         program[args[2]] = args[0] * args[1];
     }
 
-    private static void input(int[] args) {
-        program[args[0]] = input.getInput();
+    private void input(int[] args) {
+        program[args[0]] = inputBuffer.removeFirst();
     }
 
-    private static void output(int[] args, boolean[] argIsPos) {
+    private void output(int[] args, boolean[] argIsPos) {
         args[0] = argIsPos[0] ? program[args[0]] : args[0];
-        output.output(args[0]);
+        outputBuffer.add(args[0]);
     }
 
-    private static boolean jumpIfTrue(int[] args, boolean[] argIsPos) {
+    private boolean jumpIfTrue(int[] args, boolean[] argIsPos) {
         args[0] = argIsPos[0] ? program[args[0]] : args[0];
         if (args[0] != 0) {
             args[1] = argIsPos[1] ? program[args[1]] : args[1];
@@ -134,7 +119,7 @@ public class Intcode {
         return false;
     }
 
-    private static boolean jumpIfFalse(int[] args, boolean[] argIsPos) {
+    private boolean jumpIfFalse(int[] args, boolean[] argIsPos) {
         args[0] = argIsPos[0] ? program[args[0]] : args[0];
         if (args[0] == 0) {
             args[1] = argIsPos[1] ? program[args[1]] : args[1];
@@ -144,15 +129,33 @@ public class Intcode {
         return false;
     }
 
-    private static void lessThan(int[] args, boolean[] argIsPos) {
+    private void lessThan(int[] args, boolean[] argIsPos) {
         args[0] = argIsPos[0] ? program[args[0]] : args[0];
         args[1] = argIsPos[1] ? program[args[1]] : args[1];
         program[args[2]] = args[0] < args[1] ? 1 : 0;
     }
 
-    private static void equalTo(int[] args, boolean[] argIsPos) {
+    private void equalTo(int[] args, boolean[] argIsPos) {
         args[0] = argIsPos[0] ? program[args[0]] : args[0];
         args[1] = argIsPos[1] ? program[args[1]] : args[1];
         program[args[2]] = args[0] == args[1] ? 1 : 0;
     }
+
+    public LinkedList<Integer> getInputBuffer() {
+        return inputBuffer;
+    }
+
+    public LinkedList<Integer> getOutputBuffer() {
+        return outputBuffer;
+    }
+
+    public void setInputBuffer(LinkedList inputBuffer) {
+        this.inputBuffer = inputBuffer;
+    }
+
+    public void resetProgram() {
+        this.program = originalProgram.clone();
+        instPointer = 0;
+    }
+
 }
