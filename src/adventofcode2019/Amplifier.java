@@ -5,6 +5,7 @@
  */
 package adventofcode2019;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 
 /**
@@ -13,15 +14,19 @@ import java.util.LinkedList;
  */
 public class Amplifier {
 
-    private int[] program, originalProgram;
-    private int instPointer = 0;
-    private LinkedList<Integer> inputBuffer;
-    private final LinkedList<Integer> outputBuffer = new LinkedList<>();
-    private final int[] argsByOpcode = new int[100];
+    private HashMap<Long, Long> program, originalProgram;
+    private long instPointer = 0;
+    private LinkedList<Long> inputBuffer;
+    private final LinkedList<Long> outputBuffer = new LinkedList<>();
+    private final long[] argsByOpcode = new long[100];
 
-    public Amplifier(int[] program) {
-        this.program = program;
-        this.originalProgram = program.clone();
+    public Amplifier(long[] program) {
+        this.program = new HashMap<>();
+        this.originalProgram = new HashMap<>();
+        for (int i = 0; i < program.length; i++) {
+            this.program.put(Long.valueOf(i), program[i]);
+            this.originalProgram.put(Long.valueOf(i), program[i]);
+        }
         argsByOpcode[1] = 3;
         argsByOpcode[2] = 3;
         argsByOpcode[3] = 1;
@@ -34,8 +39,9 @@ public class Amplifier {
     }
 
     public boolean runProgram() {
-        int opcode, j;
-        int[] args = new int[3];
+        int opcode;
+        int j;
+        long[] args = new long[3];
         boolean[] argIsPos = new boolean[3]; //They certainly are.
         //I recognise that this boolean array solution seems roundabout, but
         //write locations must be passed as immediate values despite being
@@ -45,12 +51,12 @@ public class Amplifier {
         //In the interest of modular code, give the modes to the function that will
         //know how to interpret the arguments.
         boolean stop = false, instPointerModified;
-        while (!stop && instPointer < program.length) {
+        while (!stop && instPointer < program.size()) {
             instPointerModified = false;
-            opcode = program[instPointer] % 100;
-            for (j = 0; j < argsByOpcode[opcode]; j++) {
-                argIsPos[j] = program[instPointer] / (int) Math.pow(10, j + 2) % 10 == 0;
-                args[j] = program[instPointer + j + 1];
+            opcode = (int) ((long) program.get(instPointer) % 100);
+            for (j = 0; j < argsByOpcode[(int) opcode]; j++) {
+                argIsPos[j] = program.get(instPointer) / (long) Math.pow(10, j + 2) % 10 == 0;
+                args[j] = program.get(instPointer + j + 1);
             }
             switch (opcode) {
                 case 1:
@@ -88,64 +94,72 @@ public class Amplifier {
         return false;
     }
 
-    private void add(int[] args, boolean[] argIsPos) {
-        args[0] = argIsPos[0] ? program[args[0]] : args[0];
-        args[1] = argIsPos[1] ? program[args[1]] : args[1];
-        program[args[2]] = args[0] + args[1];
+    private void add(long[] args, boolean[] argIsPos) {
+        args[0] = argIsPos[0] ? program.get(args[0]) : args[0];
+        args[1] = argIsPos[1] ? program.get(args[1]) : args[1];
+        program.put(args[2], args[0] + args[1]);
     }
 
-    private void mult(int[] args, boolean[] argIsPos) {
-        args[0] = argIsPos[0] ? program[args[0]] : args[0];
-        args[1] = argIsPos[1] ? program[args[1]] : args[1];
-        program[args[2]] = args[0] * args[1];
+    private void mult(long[] args, boolean[] argIsPos) {
+        args[0] = argIsPos[0] ? program.get(args[0]) : args[0];
+        args[1] = argIsPos[1] ? program.get(args[1]) : args[1];
+        program.put(args[2], args[0] * args[1]);
     }
 
-    private void input(int[] args) {
-        program[args[0]] = inputBuffer.removeFirst();
+    private void input(long[] args) {
+        program.put(args[0], inputBuffer.removeFirst());
     }
 
-    private void output(int[] args, boolean[] argIsPos) {
-        args[0] = argIsPos[0] ? program[args[0]] : args[0];
+    private void output(long[] args, boolean[] argIsPos) {
+        args[0] = argIsPos[0] ? program.get(args[0]) : args[0];
         outputBuffer.add(args[0]);
     }
 
-    private boolean jumpIfTrue(int[] args, boolean[] argIsPos) {
-        args[0] = argIsPos[0] ? program[args[0]] : args[0];
+    private boolean jumpIfTrue(long[] args, boolean[] argIsPos) {
+        args[0] = argIsPos[0] ? program.get(args[0]) : args[0];
         if (args[0] != 0) {
-            args[1] = argIsPos[1] ? program[args[1]] : args[1];
+            args[1] = argIsPos[1] ? program.get(args[1]) : args[1];
             instPointer = args[1];
             return true;
         }
         return false;
     }
 
-    private boolean jumpIfFalse(int[] args, boolean[] argIsPos) {
-        args[0] = argIsPos[0] ? program[args[0]] : args[0];
+    private boolean jumpIfFalse(long[] args, boolean[] argIsPos) {
+        args[0] = argIsPos[0] ? program.get(args[0]) : args[0];
         if (args[0] == 0) {
-            args[1] = argIsPos[1] ? program[args[1]] : args[1];
+            args[1] = argIsPos[1] ? program.get(args[1]) : args[1];
             instPointer = args[1];
             return true;
         }
         return false;
     }
 
-    private void lessThan(int[] args, boolean[] argIsPos) {
-        args[0] = argIsPos[0] ? program[args[0]] : args[0];
-        args[1] = argIsPos[1] ? program[args[1]] : args[1];
-        program[args[2]] = args[0] < args[1] ? 1 : 0;
+    private void lessThan(long[] args, boolean[] argIsPos) {
+        args[0] = argIsPos[0] ? program.get(args[0]) : args[0];
+        args[1] = argIsPos[1] ? program.get(args[1]) : args[1];
+        if (args[0] < args[1]) {
+            program.put(args[2], (long) 1);
+        } else {
+            program.put(args[2], (long) 0);
+        }
     }
 
-    private void equalTo(int[] args, boolean[] argIsPos) {
-        args[0] = argIsPos[0] ? program[args[0]] : args[0];
-        args[1] = argIsPos[1] ? program[args[1]] : args[1];
-        program[args[2]] = args[0] == args[1] ? 1 : 0;
+    private void equalTo(long[] args, boolean[] argIsPos) {
+        args[0] = argIsPos[0] ? program.get(args[0]) : args[0];
+        args[1] = argIsPos[1] ? program.get(args[1]) : args[1];
+        if (args[0] == args[1]) {
+            program.put(args[2], (long) 1);
+        } else {
+            program.put(args[2], (long) 0);
+        }
     }
 
-    public LinkedList<Integer> getInputBuffer() {
+    public LinkedList<Long> getInputBuffer() {
         return inputBuffer;
     }
 
-    public LinkedList<Integer> getOutputBuffer() {
+    public LinkedList<Long> getOutputBuffer() {
         return outputBuffer;
     }
 
@@ -154,7 +168,7 @@ public class Amplifier {
     }
 
     public void resetProgram() {
-        this.program = originalProgram.clone();
+        this.program = (HashMap<Long, Long>) originalProgram.clone();
         instPointer = 0;
     }
 

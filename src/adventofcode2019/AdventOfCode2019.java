@@ -74,7 +74,7 @@ public class AdventOfCode2019 {
                 result = challengeThirteen(input);
                 break;
             case 14:
-                result = challengeFourteen(input);
+                result = (int) challengeFourteen(input);
                 break;
             case 15:
                 result = challengeFifteen(input);
@@ -492,14 +492,14 @@ public class AdventOfCode2019 {
         }
     }
 
-    private static int challengeFourteen(List<String> input) {
+    private static long challengeFourteen(List<String> input) {
         String[] numbers = input.get(0).split(",");
-        int[] program = new int[numbers.length];
+        long[] program = new long[numbers.length];
         int i;
         for (i = 0; i < numbers.length; i++) {
             program[i] = Integer.parseInt(numbers[i]);
         }
-        LinkedList<Integer> phaseSettings = new LinkedList<>();
+        LinkedList<Long> phaseSettings = new LinkedList<>();
         LinkedList<Amplifier> amplifiers = new LinkedList<>();
         for (i = 0; i < 5; i++) {
             amplifiers.add(new Amplifier(program.clone()));
@@ -508,13 +508,12 @@ public class AdventOfCode2019 {
             }
         }
         amplifiers.getFirst().setInputBuffer(amplifiers.getLast().getOutputBuffer());
-        i = tryAllAmps(program, phaseSettings, 5, 9, amplifiers);
-        return i;
+        return tryAllAmps(program, phaseSettings, 5, 9, amplifiers);
     }
 
-    private static int tryAllAmps(int[] program, LinkedList<Integer> phaseSettings, int min, int max, LinkedList<Amplifier> amplifiers) {
+    private static long tryAllAmps(long[] program, LinkedList<Long> phaseSettings, int min, int max, LinkedList<Amplifier> amplifiers) {
         if (phaseSettings.size() == 5) {
-            amplifiers.getFirst().getInputBuffer().add(0);
+            amplifiers.getFirst().getInputBuffer().add(Long.valueOf(0));
             for (int i = 0; i < 5; i++) {
                 amplifiers.get(i).resetProgram();
                 amplifiers.get(i).getInputBuffer().add(0, phaseSettings.get(i));
@@ -528,8 +527,8 @@ public class AdventOfCode2019 {
             }
             return amplifiers.getLast().getOutputBuffer().removeLast();
         } else {
-            int maxVal = Integer.MIN_VALUE, retVal;
-            for (int i = min; i <= max; i++) {
+            long maxVal = Integer.MIN_VALUE, retVal;
+            for (long i = min; i <= max; i++) {
                 if (!phaseSettings.contains(i)) {
                     phaseSettings.add(i);
                     retVal = tryAllAmps(program, phaseSettings, min, max, amplifiers);
