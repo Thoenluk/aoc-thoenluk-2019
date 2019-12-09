@@ -53,10 +53,10 @@ public class Amplifier {
         boolean stop = false, instPointerModified;
         while (!stop && instPointer < program.size()) {
             instPointerModified = false;
-            opcode = (int) ((long) program.get(instPointer) % 100);
+            opcode = (int) ((long) safeGet(instPointer) % 100);
             for (j = 0; j < argsByOpcode[(int) opcode]; j++) {
-                argIsPos[j] = program.get(instPointer) / (long) Math.pow(10, j + 2) % 10 == 0;
-                args[j] = program.get(instPointer + j + 1);
+                argIsPos[j] = safeGet(instPointer) / (long) Math.pow(10, j + 2) % 10 == 0;
+                args[j] = safeGet(instPointer + j + 1);
             }
             switch (opcode) {
                 case 1:
@@ -95,14 +95,14 @@ public class Amplifier {
     }
 
     private void add(long[] args, boolean[] argIsPos) {
-        args[0] = argIsPos[0] ? program.get(args[0]) : args[0];
-        args[1] = argIsPos[1] ? program.get(args[1]) : args[1];
+        args[0] = argIsPos[0] ? safeGet(args[0]) : args[0];
+        args[1] = argIsPos[1] ? safeGet(args[1]) : args[1];
         program.put(args[2], args[0] + args[1]);
     }
 
     private void mult(long[] args, boolean[] argIsPos) {
-        args[0] = argIsPos[0] ? program.get(args[0]) : args[0];
-        args[1] = argIsPos[1] ? program.get(args[1]) : args[1];
+        args[0] = argIsPos[0] ? safeGet(args[0]) : args[0];
+        args[1] = argIsPos[1] ? safeGet(args[1]) : args[1];
         program.put(args[2], args[0] * args[1]);
     }
 
@@ -111,14 +111,14 @@ public class Amplifier {
     }
 
     private void output(long[] args, boolean[] argIsPos) {
-        args[0] = argIsPos[0] ? program.get(args[0]) : args[0];
+        args[0] = argIsPos[0] ? safeGet(args[0]) : args[0];
         outputBuffer.add(args[0]);
     }
 
     private boolean jumpIfTrue(long[] args, boolean[] argIsPos) {
-        args[0] = argIsPos[0] ? program.get(args[0]) : args[0];
+        args[0] = argIsPos[0] ? safeGet(args[0]) : args[0];
         if (args[0] != 0) {
-            args[1] = argIsPos[1] ? program.get(args[1]) : args[1];
+            args[1] = argIsPos[1] ? safeGet(args[1]) : args[1];
             instPointer = args[1];
             return true;
         }
@@ -126,9 +126,9 @@ public class Amplifier {
     }
 
     private boolean jumpIfFalse(long[] args, boolean[] argIsPos) {
-        args[0] = argIsPos[0] ? program.get(args[0]) : args[0];
+        args[0] = argIsPos[0] ? safeGet(args[0]) : args[0];
         if (args[0] == 0) {
-            args[1] = argIsPos[1] ? program.get(args[1]) : args[1];
+            args[1] = argIsPos[1] ? safeGet(args[1]) : args[1];
             instPointer = args[1];
             return true;
         }
@@ -136,8 +136,8 @@ public class Amplifier {
     }
 
     private void lessThan(long[] args, boolean[] argIsPos) {
-        args[0] = argIsPos[0] ? program.get(args[0]) : args[0];
-        args[1] = argIsPos[1] ? program.get(args[1]) : args[1];
+        args[0] = argIsPos[0] ? safeGet(args[0]) : args[0];
+        args[1] = argIsPos[1] ? safeGet(args[1]) : args[1];
         if (args[0] < args[1]) {
             program.put(args[2], (long) 1);
         } else {
@@ -146,8 +146,8 @@ public class Amplifier {
     }
 
     private void equalTo(long[] args, boolean[] argIsPos) {
-        args[0] = argIsPos[0] ? program.get(args[0]) : args[0];
-        args[1] = argIsPos[1] ? program.get(args[1]) : args[1];
+        args[0] = argIsPos[0] ? safeGet(args[0]) : args[0];
+        args[1] = argIsPos[1] ? safeGet(args[1]) : args[1];
         if (args[0] == args[1]) {
             program.put(args[2], (long) 1);
         } else {
@@ -170,6 +170,13 @@ public class Amplifier {
     public void resetProgram() {
         this.program = (HashMap<Long, Long>) originalProgram.clone();
         instPointer = 0;
+    }
+
+    private long safeGet(long index) {
+        if (!program.containsKey(index)) {
+            program.put(index, (long) 0);
+        }
+        return program.get(index);
     }
 
 }
