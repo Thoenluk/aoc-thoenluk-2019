@@ -5,6 +5,8 @@
  */
 package adventofcode2019;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -73,6 +75,12 @@ public class AdventOfCode2019 {
                 break;
             case 14:
                 result = challengeFourteen(input);
+                break;
+            case 15:
+                result = challengeFifteen(input);
+                break;
+            case 16:
+                result = challengeSixteen(input);
                 break;
             default:
                 System.out.println("lolno");
@@ -531,5 +539,69 @@ public class AdventOfCode2019 {
             }
             return maxVal;
         }
+    }
+
+    private static int challengeFifteen(List<String> input) {
+        char[] image = input.get(0).toCharArray();
+        int x = 25, y = 6, pixel, i, j;
+        int layerSize = x * y;
+        int numOfLayers = image.length / layerSize;
+        int[][] pixelValues = new int[numOfLayers][3];
+        for (i = 0; i < numOfLayers; i++) {
+            for (j = 0; j < layerSize; j++) {
+                pixel = image[i * layerSize + j] - '0';
+                pixelValues[i][pixel]++;
+            }
+        }
+        int max = Integer.MAX_VALUE;
+        int result = 0;
+        for (i = 0; i < numOfLayers; i++) {
+            if (pixelValues[i][0] < max) {
+                result = pixelValues[i][1] * pixelValues[i][2];
+                max = pixelValues[i][0];
+            }
+        }
+        return result;
+    }
+
+    private static int challengeSixteen(List<String> input) {
+        char[] imageData = input.get(0).toCharArray();
+        int x = 25, y = 6, i, j, k, pixel, pixelsAssigned = 0;
+        int layerSize = x * y, layer = 0;
+        int numOfLayers = imageData.length / layerSize;
+        char[][] image = new char[y][x];
+        char[][][] layeredImage = new char[y][x][numOfLayers];
+        for (i = 0; i < y; i++) {
+            for (j = 0; j < x; j++) {
+                image[i][j] = 'F';
+                for (k = 0; k < numOfLayers; k++) {
+                    layeredImage[i][j][k] = imageData[k * layerSize + i * x + j];
+                }
+            }
+        }
+
+        while (pixelsAssigned < layerSize) {
+            for (i = 0; i < y; i++) {
+                for (j = 0; j < x; j++) {
+                    if (image[i][j] == 'F' && layeredImage[i][j][layer] != '2') {
+                        image[i][j] = layeredImage[i][j][layer];
+                        pixelsAssigned++;
+                    }
+                }
+            }
+            layer++;
+        }
+        try (FileWriter writer = new FileWriter("output16.txt")) {
+            for (i = 0; i < y; i++) {
+                writer.write(image[i]);
+                writer.write("\n");
+            }
+        } catch (IOException e) {
+            System.out.println("Oh noes! Following exception:" + e.getMessage());
+        }
+        return 0;
+        //While I COULD make a letter parser given that I have very distinct pixel
+        //values here, that seems a bit excessive. I can simply look at them with
+        //my human eyeholes.
     }
 }
