@@ -82,6 +82,12 @@ public class AdventOfCode2019 {
             case 16:
                 result = challengeSixteen(input);
                 break;
+            case 17:
+                result = challengeSeventeen(input);
+                break;
+            case 18:
+                result = challengeEighteen(input);
+                break;
             default:
                 System.out.println("lolno");
         }
@@ -457,8 +463,7 @@ public class AdventOfCode2019 {
     private static int challengeThirteen(List<String> input) {
         String[] numbers = input.get(0).split(",");
         int[] program = new int[numbers.length];
-        int i;
-        for (i = 0; i < numbers.length; i++) {
+        for (int i = 0; i < numbers.length; i++) {
             program[i] = Integer.parseInt(numbers[i]);
         }
         LinkedList<Integer> phaseSettings = new LinkedList<>();
@@ -602,5 +607,42 @@ public class AdventOfCode2019 {
         //While I COULD make a letter parser given that I have very distinct pixel
         //values here, that seems a bit excessive. I can simply look at them with
         //my human eyeholes.
+    }
+
+    private static int challengeSeventeen(List<String> input) {
+        String[] numbers = input.get(0).split(",");
+        long[] program = new long[numbers.length];
+        for (int i = 0; i < numbers.length; i++) {
+            program[i] = Long.parseLong(numbers[i]);
+        }
+        LinkedList<Long> inputBuffer = new LinkedList<>();
+        inputBuffer.add((long) 1);
+        Amplifier amp = new Amplifier(program);
+        amp.setInputBuffer(inputBuffer);
+        amp.runProgram();
+        for (long output : amp.getOutputBuffer()) {
+            System.out.println(output);
+        }
+        return 0;
+    }
+
+    private static int challengeEighteen(List<String> input) {
+        String[] numbers = input.get(0).split(",");
+        long[] program = new long[numbers.length];
+        for (int i = 0; i < numbers.length; i++) {
+            program[i] = Long.parseLong(numbers[i]);
+        }
+        LinkedList<Long> inputBuffer = new LinkedList<>();
+        inputBuffer.add((long) 2);
+        Amplifier amp = new Amplifier(program);
+        amp.setInputBuffer(inputBuffer);
+        System.out.println("Starting calculations now...");
+        long startTime = System.currentTimeMillis();
+        amp.runProgram();
+        System.out.format("Finished calculations in a mere %d milliseconds. Aren't I quick! The coordinates are: ", System.currentTimeMillis() - startTime);
+        for (long output : amp.getOutputBuffer()) {
+            System.out.println(output);
+        }
+        return 0;
     }
 }

@@ -15,7 +15,7 @@ import java.util.LinkedList;
 public class Amplifier {
 
     private HashMap<Long, Long> program, originalProgram;
-    private long instPointer = 0;
+    private long instPointer = 0, relativeBase = 0;
     private LinkedList<Long> inputBuffer;
     private final LinkedList<Long> outputBuffer = new LinkedList<>();
     private final long[] argsByOpcode = new long[100];
@@ -35,12 +35,13 @@ public class Amplifier {
         argsByOpcode[6] = 2;
         argsByOpcode[7] = 3;
         argsByOpcode[8] = 3;
+        argsByOpcode[9] = 1;
         argsByOpcode[99] = 0;
     }
 
     public boolean runProgram() {
-        int opcode;
-        int j;
+        int opcode, j;
+        long mode;
         long[] args = new long[3];
         boolean[] argIsPos = new boolean[3]; //They certainly are.
         //I recognise that this boolean array solution seems roundabout, but
@@ -55,8 +56,16 @@ public class Amplifier {
             instPointerModified = false;
             opcode = (int) ((long) safeGet(instPointer) % 100);
             for (j = 0; j < argsByOpcode[(int) opcode]; j++) {
-                argIsPos[j] = safeGet(instPointer) / (long) Math.pow(10, j + 2) % 10 == 0;
                 args[j] = safeGet(instPointer + j + 1);
+                mode = safeGet(instPointer) / (long) Math.pow(10, j + 2) % 10;
+                if (mode == 1) {
+                    argIsPos[j] = false;
+                } else {
+                    argIsPos[j] = true;
+                    if (mode == 2) {
+                        args[j] += relativeBase;
+                    }
+                }
             }
             switch (opcode) {
                 case 1:
@@ -83,6 +92,9 @@ public class Amplifier {
                     break;
                 case 8:
                     equalTo(args, argIsPos);
+                    break;
+                case 9:
+                    adjustRelativeBase(args, argIsPos);
                     break;
                 case 99:
                     return true;
@@ -155,6 +167,11 @@ public class Amplifier {
         }
     }
 
+    private void adjustRelativeBase(long[] args, boolean[] argIsPos) {
+        args[0] = argIsPos[0] ? safeGet(args[0]) : args[0];
+        relativeBase += args[0];
+    }
+
     public LinkedList<Long> getInputBuffer() {
         return inputBuffer;
     }
@@ -170,6 +187,7 @@ public class Amplifier {
     public void resetProgram() {
         this.program = (HashMap<Long, Long>) originalProgram.clone();
         instPointer = 0;
+        relativeBase = 0;
     }
 
     private long safeGet(long index) {
