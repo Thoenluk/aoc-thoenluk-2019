@@ -88,6 +88,12 @@ public class AdventOfCode2019 {
             case 18:
                 result = challengeEighteen(input);
                 break;
+            case 19:
+                result = challengeNineteen(input);
+                break;
+            case 20:
+                result = challengeTwenty(input);
+                break;
             default:
                 System.out.println("lolno");
         }
@@ -644,5 +650,129 @@ public class AdventOfCode2019 {
             System.out.println(output);
         }
         return 0;
+    }
+
+    private static int challengeNineteen(List<String> input) {
+        int y = 0, x, max = Integer.MIN_VALUE;
+        int[] relCoords = new int[2];
+        double totalLength, epsilon = 0.0001;
+        double[] vector;
+        boolean addElement;
+        HashSet<double[]> vectors = new HashSet<>();
+        HashSet<int[]> asteroids = new HashSet<>();
+        for (String line : input) {
+            for (x = 0; x < line.length(); x++) {
+                if (line.charAt(x) == '#') {
+                    asteroids.add(new int[]{x, y});
+                }
+            }
+            y++;
+        }
+        for (int[] current : asteroids) {
+            vectors.clear();
+            for (int[] other : asteroids) {
+                if (current != other) {
+                    vector = new double[2];
+                    relCoords[0] = other[0] - current[0];
+                    relCoords[1] = other[1] - current[1];
+                    totalLength = Math.sqrt(relCoords[0] * relCoords[0] + relCoords[1] * relCoords[1]);
+                    for (int i = 0; i < 2; i++) {
+                        vector[i] = relCoords[i] / totalLength;
+                    }
+                    addElement = true;
+                    for (double[] otherVector : vectors) {
+                        if (Math.abs(otherVector[0] - vector[0]) < epsilon && Math.abs(otherVector[1] - vector[1]) < epsilon) {
+                            addElement = false;
+                        }
+                    }
+                    if (addElement) {
+                        vectors.add(vector);
+                    }
+                }
+            }
+            max = max < vectors.size() ? vectors.size() : max;
+        }
+        return max;
+    }
+
+    private static int challengeTwenty(List<String> input) {
+        //Station position is [27,19]
+        int vaporised = 0, i = 0;
+        int[] lastAsteroid = new int[2];
+        int y = 0, x;
+        int[] relCoords = new int[2];
+        final int[] current = new int[]{27, 19}, relToCurr = new int[4];
+        double totalLength, epsilon = 0.0001;
+        double[] vector;
+        final double[] distances = new double[2];
+        boolean newElement;
+        LinkedList<double[]> vectors = new LinkedList<>();
+        HashSet<int[]> asteroids = new HashSet<>();
+        HashMap<double[], LinkedList<int[]>> positions = new HashMap<>();
+        for (String line : input) {
+            for (x = 0; x < line.length(); x++) {
+                if (line.charAt(x) == '#' && !(x == current[0] && y == current[1])) {
+                    asteroids.add(new int[]{x, y});
+                }
+            }
+            y++;
+        }
+        for (int[] other : asteroids) {
+            vector = new double[2];
+            relCoords[0] = other[0] - current[0];
+            relCoords[1] = other[1] - current[1];
+            totalLength = Math.sqrt(relCoords[0] * relCoords[0] + relCoords[1] * relCoords[1]);
+            for (i = 0; i < 2; i++) {
+                vector[i] = relCoords[i] / totalLength;
+            }
+            newElement = true;
+            for (double[] otherVector : vectors) {
+                if (Math.abs(otherVector[0] - vector[0]) < epsilon && Math.abs(otherVector[1] - vector[1]) < epsilon) {
+                    newElement = false;
+                    vector = otherVector;
+                }
+            }
+            if (newElement) {
+                vectors.add(vector);
+                positions.put(vector, new LinkedList<>());
+            }
+            positions.get(vector).add(other);
+        }
+        vectors.sort((double[] o1, double[] o2) -> {
+            if (o1[1] == -1.0) {
+                return -1;
+            }
+            if (o2[1] == -1.0) {
+                return 1;
+            }
+            if (Math.signum(o1[0]) == Math.signum(o2[0])) {
+                return (int) (Math.signum(o1[1] - o2[1]) * Math.signum(o1[0]));
+            } else {
+                return (int) (Math.signum(o2[0]) - Math.signum(o1[0]));
+            }
+        });
+        for (LinkedList<int[]> angle : positions.values()) {
+            angle.sort((int[] o1, int[] o2) -> {
+                relToCurr[0] = o1[0] - current[0];
+                relToCurr[1] = o1[1] - current[1];
+                relToCurr[2] = o2[0] - current[0];
+                relToCurr[3] = o2[1] - current[1];
+                distances[0] = Math.sqrt(relToCurr[0] * relToCurr[0] + relToCurr[1] * relToCurr[1]);
+                distances[1] = Math.sqrt(relToCurr[2] * relToCurr[2] + relToCurr[3] * relToCurr[3]);
+                return (int) (distances[0] - distances[1]);
+            });
+        }
+        i = 0;
+        while (vaporised < 200) {
+            vector = vectors.get(i);
+            lastAsteroid = positions.get(vector).removeFirst();
+            if (positions.get(vector).isEmpty()) {
+                positions.remove(vector);
+            }
+            i++;
+            i %= vectors.size();
+            vaporised++;
+        }
+        return lastAsteroid[0] * 100 + lastAsteroid[1];
     }
 }
