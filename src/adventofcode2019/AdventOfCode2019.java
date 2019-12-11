@@ -94,6 +94,12 @@ public class AdventOfCode2019 {
             case 20:
                 result = challengeTwenty(input);
                 break;
+            case 21:
+                result = challengeTwentyOne(input);
+                break;
+            case 22:
+                result = challengeTwentyTwo(input);
+                break;
             default:
                 System.out.println("lolno");
         }
@@ -774,5 +780,114 @@ public class AdventOfCode2019 {
             vaporised++;
         }
         return lastAsteroid[0] * 100 + lastAsteroid[1];
+    }
+
+    private static int challengeTwentyOne(List<String> input) {
+        String[] numbers = input.get(0).split(",");
+        long[] program = new long[numbers.length];
+        for (int i = 0; i < numbers.length; i++) {
+            program[i] = Long.parseLong(numbers[i]);
+        }
+        LinkedList<Long> inputBuffer = new LinkedList<>();
+        Amplifier amp = new Amplifier(program);
+        amp.setInputBuffer(inputBuffer);
+        LinkedList<Long> outputBuffer = amp.getOutputBuffer();
+        HashMap<Integer, HashMap<Integer, Long>> hull = new HashMap<>();
+        int robotX = 0, robotY = 0, dirHolder, squaresPainted = 0;
+        int[] direction = new int[]{0, 1};
+        boolean halted = false;
+        while (!halted) {
+            if (!hull.containsKey(robotX)) {
+                hull.put(robotX, new HashMap<>());
+            }
+            if (!hull.get(robotX).containsKey(robotY)) {
+                hull.get(robotX).put(robotY, (long) 0);
+                squaresPainted++;
+            }
+            inputBuffer.add(hull.get(robotX).get(robotY));
+            halted = amp.runProgram();
+            if (!outputBuffer.isEmpty()) {
+                hull.get(robotX).put(robotY, outputBuffer.removeFirst());
+                if (outputBuffer.removeFirst() == 0) {
+                    dirHolder = direction[0];
+                    direction[0] = -direction[1];
+                    direction[1] = dirHolder;
+                } else {
+                    dirHolder = direction[0];
+                    direction[0] = direction[1];
+                    direction[1] = -dirHolder;
+                }
+                robotX += direction[0];
+                robotY += direction[1];
+            }
+        }
+        return squaresPainted;
+    }
+
+    private static int challengeTwentyTwo(List<String> input) {
+        String[] numbers = input.get(0).split(",");
+        long[] program = new long[numbers.length];
+        for (int i = 0; i < numbers.length; i++) {
+            program[i] = Long.parseLong(numbers[i]);
+        }
+        LinkedList<Long> inputBuffer = new LinkedList<>();
+        Amplifier amp = new Amplifier(program);
+        amp.setInputBuffer(inputBuffer);
+        LinkedList<Long> outputBuffer = amp.getOutputBuffer();
+        HashMap<Integer, HashMap<Integer, Long>> hull = new HashMap<>();
+        int robotY = 0, robotX = 0, dirHolder, squaresPainted = 0;
+        int[] direction = new int[]{1, 0};
+        boolean halted = false;
+        hull.put(robotY, new HashMap<>());
+        hull.get(robotY).put(robotX, (long) 1);
+        while (!halted) {
+            if (!hull.containsKey(robotY)) {
+                hull.put(robotY, new HashMap<>());
+            }
+            if (!hull.get(robotY).containsKey(robotX)) {
+                hull.get(robotY).put(robotX, (long) 0);
+                squaresPainted++;
+            }
+            inputBuffer.add(hull.get(robotY).get(robotX));
+            halted = amp.runProgram();
+            if (!outputBuffer.isEmpty()) {
+                hull.get(robotY).put(robotX, outputBuffer.removeFirst());
+                if (outputBuffer.removeFirst() == 0) {
+                    dirHolder = direction[1];
+                    direction[1] = -direction[0];
+                    direction[0] = dirHolder;
+                } else {
+                    dirHolder = direction[1];
+                    direction[1] = direction[0];
+                    direction[0] = -dirHolder;
+                }
+                robotX += direction[1];
+                robotY += direction[0];
+            }
+        }
+        try (FileWriter writer = new FileWriter("output22.txt")) {
+            //Notable: You need to insert a . on lines 2, 3, and 6 (1-indexed, so the first
+            //line is line 1) to make the message legible. A more diligent coder
+            //would scan for the minimum and maximum indices used and pad automatically.
+            //Or initialise an array as it very clearly wants of me, but that would
+            //still require the initial runthrough so I might as well read off the maps
+            //I have now.
+            //For future reference: The keySets should ABSOLUTELY be converted
+            //into a List and sorted. It so happens that the natural order in
+            //which they are returned (0 -> -5 for Y, 0 -> 42 for X) perfectly
+            //arranges the output. However, since a hash value being arbitrary and
+            //unconnected to the actual value is kind of the entire bloody point
+            //of the things, I wouldn't expect this to always be the case.
+            for (Integer lineKey : hull.keySet()) {
+                for (Integer colourKey : hull.get(lineKey).keySet()) {
+                    writer.write(hull.get(lineKey).get(colourKey) == 0 ? '.' : '#');
+                    System.out.println(lineKey + " " + colourKey);
+                }
+                writer.write("\n");
+            }
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+        return squaresPainted;
     }
 }

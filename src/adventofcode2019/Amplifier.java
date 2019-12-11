@@ -75,11 +75,12 @@ public class Amplifier {
                     mult(args, argIsPos);
                     break;
                 case 3:
-                    input(args);
+                    stop = !input(args);
+                    instPointerModified = stop; //Stop program from advancing if
+                    //waiting on input to be provided.
                     break;
                 case 4:
                     output(args, argIsPos);
-                    stop = true;
                     break;
                 case 5:
                     instPointerModified = jumpIfTrue(args, argIsPos);
@@ -118,8 +119,13 @@ public class Amplifier {
         program.put(args[2], args[0] * args[1]);
     }
 
-    private void input(long[] args) {
+    //Retval: False while input is blocked, true on successful read.
+    private boolean input(long[] args) {
+        if (inputBuffer.isEmpty()) {
+            return false;
+        }
         program.put(args[0], inputBuffer.removeFirst());
+        return true;
     }
 
     private void output(long[] args, boolean[] argIsPos) {
