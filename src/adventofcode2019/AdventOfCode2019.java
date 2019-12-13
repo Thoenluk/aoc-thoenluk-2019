@@ -106,6 +106,12 @@ public class AdventOfCode2019 {
             case 24:
                 result = challengeTwentyFour(input);
                 break;
+            case 25:
+                result = challengeTwentyFive(input);
+                break;
+            case 26:
+                result = challengeTwentySix(input);
+                break;
             default:
                 System.out.println("lolno");
         }
@@ -1019,5 +1025,106 @@ public class AdventOfCode2019 {
             lcm += a;
         }
         return lcm;
+    }
+
+    private static int challengeTwentyFive(List<String> input) {
+        String[] numbers = input.get(0).split(",");
+        long[] program = new long[numbers.length];
+        HashMap<String, Long> numberCache = new HashMap<>();
+        for (int i = 0; i < numbers.length; i++) {
+            if (!numberCache.containsKey(numbers[i])) {
+                numberCache.put(numbers[i], Long.parseLong(numbers[i]));
+            }
+            program[i] = numberCache.get(numbers[i]);
+        }
+        LinkedList<Long> inputBuffer = new LinkedList<>();
+        Amplifier amp = new Amplifier(program);
+        amp.setInputBuffer(inputBuffer);
+        LinkedList<Long> outputBuffer = amp.getOutputBuffer();
+        char[] tiles = new char[]{' ', 'X', '~', '=', 'o'};
+        char[][] board = new char[44][24]; //X/Y
+        int x, y, blocks = 0;
+        amp.runProgram();
+        Long[] asArray = new Long[0];
+        asArray = outputBuffer.toArray(asArray);
+        for (int i = 0; i < outputBuffer.size(); i += 3) {
+            x = asArray[i].intValue();
+            y = asArray[i + 1].intValue();
+            board[x][y] = tiles[asArray[i + 2].intValue()];
+            if (board[x][y] == '~') {
+                blocks++;
+            }
+        }
+        try (FileWriter writer = new FileWriter("output25.txt")) {
+            for (y = 0; y < board[0].length; y++) {
+                for (x = 0; x < board.length; x++) {
+                    writer.append(board[x][y]);
+                }
+                writer.append('\n');
+            }
+        } catch (Exception e) {
+            System.out.println("Oh no! Exception: " + e.getMessage());
+        }
+        return blocks;
+    }
+
+    private static int challengeTwentySix(List<String> input) {
+        String[] numbers = input.get(0).split(",");
+        long[] program = new long[numbers.length];
+        HashMap<String, Long> numberCache = new HashMap<>();
+        for (int i = 0; i < numbers.length; i++) {
+            if (!numberCache.containsKey(numbers[i])) {
+                numberCache.put(numbers[i], Long.parseLong(numbers[i]));
+            }
+            program[i] = numberCache.get(numbers[i]);
+        }
+        program[0] = 2; //I mean, who goes to space without any quarters? Scrub.
+        LinkedList<Long> inputBuffer = new LinkedList<>();
+        Amplifier amp = new Amplifier(program);
+        amp.setInputBuffer(inputBuffer);
+        LinkedList<Long> outputBuffer = amp.getOutputBuffer();
+        char[] tiles = new char[]{' ', 'X', '~', '=', 'o'};
+        char[][] board = new char[44][24]; //X/Y
+        int x = 0, y = 0, score = 0, ballX = 0, paddleX = 0;
+        Long move = (long) 0;
+        while (!amp.runProgram()) {
+            while (!outputBuffer.isEmpty()) {
+                x = outputBuffer.remove().intValue();
+                y = outputBuffer.remove().intValue();
+                if (x == -1 && y == 0) {
+                    score = outputBuffer.remove().intValue();
+                } else {
+                    board[x][y] = tiles[outputBuffer.remove().intValue()];
+                    if (board[x][y] == 'o') {
+                        ballX = x;
+                    } else if (board[x][y] == '=') {
+                        paddleX = x;
+                    }
+                }
+            }
+            outputBuffer = new LinkedList<>();
+            amp.setOutputBuffer(outputBuffer);
+            //Uncomment to see my amazing high-tech AI in action. Warning: Lag.
+            /*for (y = 0; y < board[0].length; y++) {
+                for (x = 0; x < board.length; x++) {
+                    System.out.print(board[x][y]);
+                }
+                System.out.println();
+            }
+            System.out.println("Current score: " + score);*/
+            move = (long) Math.signum(ballX - paddleX);
+            inputBuffer.add(move);
+        }
+        while (!outputBuffer.isEmpty()) {
+            x = outputBuffer.remove().intValue();
+            y = outputBuffer.remove().intValue();
+            if (x == -1 && y == 0) {
+                score = outputBuffer.remove().intValue();
+                break;
+            } else {
+                outputBuffer.remove();
+            }
+        }
+        return score;
     }
 }

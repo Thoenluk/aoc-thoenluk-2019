@@ -17,7 +17,7 @@ public class Amplifier {
     private HashMap<Long, Long> program, originalProgram;
     private long instPointer = 0, relativeBase = 0;
     private LinkedList<Long> inputBuffer;
-    private final LinkedList<Long> outputBuffer = new LinkedList<>();
+    private LinkedList<Long> outputBuffer = new LinkedList<>();
     private final long[] argsByOpcode = new long[100];
 
     public Amplifier(long[] program) {
@@ -188,6 +188,10 @@ public class Amplifier {
 
     public void setInputBuffer(LinkedList inputBuffer) {
         this.inputBuffer = inputBuffer;
+    }
+
+    public void setOutputBuffer(LinkedList buffer) {
+        this.outputBuffer = buffer;
     }
 
     public void resetProgram() {
