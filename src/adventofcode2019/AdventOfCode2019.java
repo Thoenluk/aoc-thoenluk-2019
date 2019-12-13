@@ -100,6 +100,12 @@ public class AdventOfCode2019 {
             case 22:
                 result = challengeTwentyTwo(input);
                 break;
+            case 23:
+                result = challengeTwentyThree(input);
+                break;
+            case 24:
+                result = challengeTwentyFour(input);
+                break;
             default:
                 System.out.println("lolno");
         }
@@ -889,5 +895,129 @@ public class AdventOfCode2019 {
             System.out.println(e.getMessage());
         }
         return squaresPainted;
+    }
+
+    private static int challengeTwentyThree(List<String> input) {
+        String[] numbers;
+        String line;
+        int i, j, k, iterations, alignment, result, pot, kin;
+        int[][] positions = new int[input.size()][3];
+        int[][] velocities = new int[input.size()][3];
+        for (i = 0; i < input.size(); i++) {
+            line = input.get(i);
+            numbers = line.replaceAll("[^\\d,-]", "").split(",");
+            for (j = 0; j < 3; j++) {
+                positions[i][j] = Integer.parseInt(numbers[j]);
+            }
+        }
+        for (iterations = 0; iterations < 1000; iterations++) {
+            for (i = 0; i < positions.length; i++) {
+                for (j = i + 1; j < positions.length; j++) {
+                    for (k = 0; k < positions[i].length; k++) {
+                        alignment = (int) Math.signum(positions[j][k] - positions[i][k]);
+                        velocities[i][k] += alignment;
+                        velocities[j][k] -= alignment;
+                    }
+                }
+                for (k = 0; k < positions[i].length; k++) {
+                    positions[i][k] += velocities[i][k];
+                }
+            }
+        }
+        result = 0;
+        for (i = 0; i < positions.length; i++) {
+            pot = 0;
+            kin = 0;
+            for (k = 0; k < positions[i].length; k++) {
+                pot += Math.abs(positions[i][k]);
+                kin += Math.abs(velocities[i][k]);
+            }
+            result += pot * kin;
+        }
+        return result;
+    }
+
+    private static int challengeTwentyFour(List<String> input) {
+        String[] numbers;
+        String line;
+        int moon, otherMoon, axis, iterations, alignment;
+        int[] cycleTimes = new int[3];
+        int[][] originalPositions = new int[input.size()][3];
+        int[][] positions = new int[input.size()][3];
+        int[][] velocities = new int[input.size()][3];
+        boolean cyclesFound = false, possibleCycle;
+        long result;
+        for (moon = 0; moon < input.size(); moon++) {
+            line = input.get(moon);
+            numbers = line.replaceAll("[^\\d,-]", "").split(",");
+            for (axis = 0; axis < 3; axis++) {
+                positions[moon][axis] = Integer.parseInt(numbers[axis]);
+                originalPositions[moon][axis] = positions[moon][axis];
+            }
+        }
+        iterations = 1;
+        while (!cyclesFound) {
+            for (moon = 0; moon < positions.length; moon++) {
+                for (otherMoon = moon + 1; otherMoon < positions.length; otherMoon++) {
+                    for (axis = 0; axis < positions[moon].length; axis++) {
+                        alignment = (int) Math.signum(positions[otherMoon][axis] - positions[moon][axis]);
+                        velocities[moon][axis] += alignment;
+                        velocities[otherMoon][axis] -= alignment;
+                    }
+                }
+                for (axis = 0; axis < positions[moon].length; axis++) {
+                    positions[moon][axis] += velocities[moon][axis];
+                }
+            }
+            iterations++;
+            cyclesFound = true;
+            for (axis = 0; axis < positions[0].length; axis++) {
+                possibleCycle = true;
+                for (moon = 0; moon < positions.length; moon++) {
+                    if (positions[moon][axis] != originalPositions[moon][axis]) {
+                        possibleCycle = false;
+                        break;
+                    }
+                }
+                if (possibleCycle && cycleTimes[axis] == 0) {
+                    cycleTimes[axis] = iterations;
+                }
+                cyclesFound = cyclesFound && cycleTimes[axis] != 0;
+            }
+        }
+        //The basic idea here: Since axes are independent from one another, they
+        //each have their own cycles. Finding the total cycle is then a matter of
+        //finding where each cycle finishes at the same time.
+        //Interestingly, I've only had to check for positions, not velocities.
+        //It seems trivial to construct a case where that is an insufficient
+        //condition, so use with caution. In this case though, it worked. So.
+        for (axis = 0; axis < cycleTimes.length; axis++) {
+            System.out.format("The positions on axis %d loop every %d iterations.\n", axis, cycleTimes[axis]);
+        }
+        System.out.print("Given that, let there be light!\n"
+                + "The total iterations to reach the original state are: ");
+        result = cycleTimes[0];
+        for (axis = 1; axis < cycleTimes.length; axis++) {
+            result = lcm(result, cycleTimes[axis]);
+        }
+        System.out.println(result);
+        return 0;
+    }
+
+    private static long lcm(long a, long b) {
+        if (a == 0 || b == 0) {
+            return 0;
+        }
+        long lcm;
+        if (a < b) {
+            lcm = a;
+            a = b;
+            b = lcm;
+        }
+        lcm = a;
+        while (lcm % b != 0) {
+            lcm += a;
+        }
+        return lcm;
     }
 }
