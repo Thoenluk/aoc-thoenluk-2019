@@ -1047,6 +1047,9 @@ public class AdventOfCode2019 {
         amp.runProgram();
         Long[] asArray = new Long[0];
         asArray = outputBuffer.toArray(asArray);
+        //I am leaving this here as a testament to what not to do. But see below
+        //for the proper solution that is way faster and also actually empties
+        //the output buffer.
         for (int i = 0; i < outputBuffer.size(); i += 3) {
             x = asArray[i].intValue();
             y = asArray[i + 1].intValue();
