@@ -112,6 +112,12 @@ public class AdventOfCode2019 {
             case 26:
                 result = challengeTwentySix(input);
                 break;
+            case 27:
+                result = challengeTwentySeven(input);
+                break;
+            case 28:
+                result = challengeTwentyEight(input);
+                break;
             default:
                 System.out.println("lolno");
         }
@@ -1129,5 +1135,98 @@ public class AdventOfCode2019 {
             }
         }
         return score;
+    }
+
+    private static int challengeTwentySeven(List<String> input) {
+        HashMap<String, Chemical> knownChems = new HashMap<>();
+        HashMap<String, Integer> numberCache = new HashMap<>();
+        Chemical currentChem, requirement;
+        String[] reaction, chemDescription;
+        String chemName;
+        int i, amount;
+        for (String line : input) {
+            reaction = line.split(" => ");
+            chemDescription = reaction[1].split(" ");
+            if (!numberCache.containsKey(chemDescription[0])) {
+                numberCache.put(chemDescription[0], Integer.parseInt(chemDescription[0]));
+            }
+            chemName = chemDescription[1];
+            if (!knownChems.containsKey(chemName)) {
+                currentChem = new Chemical(chemName);
+                knownChems.put(chemName, currentChem);
+            } else {
+                currentChem = knownChems.get(chemName);
+            }
+            amount = numberCache.get(chemDescription[0]);
+            currentChem.setAmountProduced(amount);
+            reaction = reaction[0].split(", ");
+            for (i = 0; i < reaction.length; i++) {
+                chemDescription = reaction[i].split(" ");
+                if (!numberCache.containsKey(chemDescription[0])) {
+                    numberCache.put(chemDescription[0], Integer.parseInt(chemDescription[0]));
+                }
+                amount = numberCache.get(chemDescription[0]);
+                chemName = chemDescription[1];
+                if (knownChems.containsKey(chemName)) {
+                    requirement = knownChems.get(chemName);
+                } else {
+                    requirement = new Chemical(chemName);
+                    knownChems.put(chemName, requirement);
+                }
+                currentChem.addRequired(requirement, amount);
+            }
+        }
+        knownChems.get("ORE").setStock(Integer.MAX_VALUE);
+        HashMap<Chemical, Long> costs = knownChems.get("FUEL").produce();
+        return costs.get(knownChems.get("ORE")).intValue();
+    }
+
+    private static int challengeTwentyEight(List<String> input) {
+        HashMap<String, Chemical> knownChems = new HashMap<>();
+        HashMap<String, Integer> numberCache = new HashMap<>();
+        Chemical currentChem, requirement;
+        String[] reaction, chemDescription;
+        String chemName;
+        int i, amount;
+        for (String line : input) {
+            reaction = line.split(" => ");
+            chemDescription = reaction[1].split(" ");
+            if (!numberCache.containsKey(chemDescription[0])) {
+                numberCache.put(chemDescription[0], Integer.parseInt(chemDescription[0]));
+            }
+            chemName = chemDescription[1];
+            if (!knownChems.containsKey(chemName)) {
+                currentChem = new Chemical(chemName);
+                knownChems.put(chemName, currentChem);
+            } else {
+                currentChem = knownChems.get(chemName);
+            }
+            amount = numberCache.get(chemDescription[0]);
+            currentChem.setAmountProduced(amount);
+            reaction = reaction[0].split(", ");
+            for (i = 0; i < reaction.length; i++) {
+                chemDescription = reaction[i].split(" ");
+                if (!numberCache.containsKey(chemDescription[0])) {
+                    numberCache.put(chemDescription[0], Integer.parseInt(chemDescription[0]));
+                }
+                amount = numberCache.get(chemDescription[0]);
+                chemName = chemDescription[1];
+                if (knownChems.containsKey(chemName)) {
+                    requirement = knownChems.get(chemName);
+                } else {
+                    requirement = new Chemical(chemName);
+                    knownChems.put(chemName, requirement);
+                }
+                currentChem.addRequired(requirement, amount);
+            }
+        }
+        long oreAvailable = ((long) 1000000) * 1000000;
+        long remnantReactions = Long.MAX_VALUE, currentLifetime;
+        Chemical fuel = knownChems.get("FUEL");
+        Chemical ore = knownChems.get("ORE");
+        knownChems.remove(ore.getName());
+        ore.setStock(oreAvailable);
+        HashMap<Chemical, Long> costs = fuel.produce();
+        return 0;
     }
 }
