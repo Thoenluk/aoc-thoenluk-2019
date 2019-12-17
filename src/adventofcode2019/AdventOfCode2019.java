@@ -118,6 +118,18 @@ public class AdventOfCode2019 {
             case 28:
                 result = challengeTwentyEight(input);
                 break;
+            case 29:
+                result = challengeTwentyNine(input);
+                break;
+            case 30:
+                result = challengeThirty(input);
+                break;
+            case 31:
+                result = challengeThirtyOne(input);
+                break;
+            case 32:
+                result = challengeThirtyTwo(input);
+                break;
             default:
                 System.out.println("lolno");
         }
@@ -1227,6 +1239,470 @@ public class AdventOfCode2019 {
         knownChems.remove(ore.getName());
         ore.setStock(oreAvailable);
         HashMap<Chemical, Long> costs = fuel.produce();
+        return 0;
+    }
+
+    private static int challengeTwentyNine(List<String> input) {
+        Amplifier amp = new Amplifier(parseIntcode(input.get(0)));
+        LinkedList<Long> inputBuffer = new LinkedList<>();
+        amp.setInputBuffer(inputBuffer);
+        LinkedList<Long> outputBuffer = amp.getOutputBuffer();
+        HashMap<Integer, HashMap<Integer, Integer>> board = new HashMap<>();
+        HashMap<Integer, HashMap<Integer, Integer>> distances = new HashMap<>();
+        LinkedList<int[]> unexplored = new LinkedList<>();
+        LinkedList<int[]> toBeUpdated = new LinkedList<>();
+        board.put(0, new HashMap<>());
+        board.get(0).put(0, 1);
+        distances.put(0, new HashMap<>());
+        distances.get(0).put(0, 1);
+        int robotX = 0, robotY = 0, retVal = 0, i, min, nextMove = 0;
+        int minX, maxX, minY, maxY;
+        int[] currentDir, point, distPoint, adjacent = new int[2], target = new int[2];
+        int[][] directions = new int[][]{{0, 1}, {0, -1}, {-1, 0}, {1, 0}};
+        do {
+            for (i = 0; i < directions.length; i++) {
+                currentDir = directions[i];
+                adjacent[0] = robotX + currentDir[0];
+                adjacent[1] = robotY + currentDir[1];
+                if (!board.containsKey(adjacent[0])) {
+                    board.put(adjacent[0], new HashMap<>());
+                    distances.put(adjacent[0], new HashMap<>());
+                }
+                if (!board.get(adjacent[0]).containsKey(adjacent[1])) {
+                    board.get(adjacent[0]).put(adjacent[1], -1);
+                    distances.get(adjacent[0]).put(adjacent[1], 0);
+                    unexplored.add(new int[]{adjacent[0], adjacent[1]});
+                }
+            }
+            point = unexplored.removeLast();
+            toBeUpdated.add(point);
+            distances.values().stream().forEach((column) -> {
+                column.keySet().stream().forEach((rowKey) -> {
+                    column.put(rowKey, Integer.MAX_VALUE);
+                });
+            });
+            distances.get(point[0]).put(point[1], 0);
+            while (!toBeUpdated.isEmpty()) {
+                distPoint = toBeUpdated.removeFirst();
+                for (i = 0; i < directions.length; i++) {
+                    currentDir = directions[i];
+                    adjacent[0] = distPoint[0] + currentDir[0];
+                    adjacent[1] = distPoint[1] + currentDir[1];
+                    if (distances.containsKey(adjacent[0]) && distances.get(adjacent[0]).containsKey(adjacent[1])
+                            && board.get(adjacent[0]).get(adjacent[1]) > 0
+                            && distances.get(adjacent[0]).get(adjacent[1]) > distances.get(distPoint[0]).get(distPoint[1])) {
+                        distances.get(adjacent[0]).put(adjacent[1], distances.get(distPoint[0]).get(distPoint[1]) + 1);
+                        toBeUpdated.add(new int[]{adjacent[0], adjacent[1]});
+                    }
+                }
+            }
+            while (!(robotX == point[0] && robotY == point[1])) {
+                min = Integer.MAX_VALUE;
+                //Uncomment this and commented code below for more spam.
+                /*minX = Integer.MAX_VALUE;
+                maxX = Integer.MIN_VALUE;
+                minY = Integer.MAX_VALUE;
+                maxY = Integer.MIN_VALUE;
+                for (Integer X : board.keySet()) {
+                    minX = X < minX ? X : minX;
+                    maxX = X > maxX ? X : maxX;
+                    for (Integer Y : board.get(X).keySet()) {
+                        minY = Y < minY ? Y : minY;
+                        maxY = Y > maxY ? Y : maxY;
+                    }
+                }
+                for (int y = maxY; y >= minY; y--) {
+                    for (int x = minX; x <= maxX; x++) {
+                        if (!(board.containsKey(x) && board.get(x).containsKey(y))) {
+                            System.out.print(' ');
+                        } else if (x == robotX && y == robotY) {
+                            System.out.print('R');
+                        } else {
+                            switch (board.get(x).get(y)) {
+                                case 0:
+                                    System.out.print('#');
+                                    break;
+                                case 1:
+                                    System.out.print('.');
+                                    break;
+                                case -1:
+                                    System.out.print('?');
+                            }
+                        }
+                    }
+                    System.out.println();
+                }
+                System.out.println("Coordinates: " + robotX + " " + robotY);
+                System.out.println("Target: " + point[0] + " " + point[1]);*/
+                for (i = 0; i < directions.length; i++) {
+                    currentDir = directions[i];
+                    adjacent[0] = robotX + currentDir[0];
+                    adjacent[1] = robotY + currentDir[1];
+                    if (distances.get(adjacent[0]).get(adjacent[1]) < min) {
+                        min = distances.get(adjacent[0]).get(adjacent[1]);
+                        nextMove = i;
+                    }
+                    //System.out.println("Value of next field: " + distances.get(adjacent[0]).get(adjacent[1]));
+                }
+                //System.out.println("Next move: " + nextMove);
+                adjacent[0] = robotX + directions[nextMove][0];
+                adjacent[1] = robotY + directions[nextMove][1];
+                inputBuffer.add((long) nextMove + 1);
+                amp.runProgram();
+                retVal = outputBuffer.removeFirst().intValue();
+                robotX = adjacent[0];
+                robotY = adjacent[1];
+            }
+            board.get(adjacent[0]).put(adjacent[1], retVal);
+            if (retVal == 0) {
+                //Just bonked, take a step back. Easier than not stepping in the loop.
+                robotX -= directions[nextMove][0];
+                robotY -= directions[nextMove][1];
+            } else {
+                //Step successful. Add newly discovered unexplored tiles.
+                if (retVal == 2) {
+                    target[0] = robotX;
+                    target[1] = robotY;
+                }
+                for (i = 0; i < directions.length; i++) {
+                    currentDir = directions[i];
+                    adjacent[0] = robotX + currentDir[0];
+                    adjacent[1] = robotY + currentDir[1];
+                    if (!board.containsKey(adjacent[0])) {
+                        board.put(adjacent[0], new HashMap<>());
+                        distances.put(adjacent[0], new HashMap<>());
+                    }
+                    if (!board.get(adjacent[0]).containsKey(adjacent[1])) {
+                        board.get(adjacent[0]).put(adjacent[1], -1);
+                        distances.get(adjacent[0]).put(adjacent[1], 0);
+                        unexplored.add(new int[]{adjacent[0], adjacent[1]});
+                    }
+                }
+            }
+        } while (!unexplored.isEmpty());
+        toBeUpdated.add(new int[]{0, 0});
+        distances.values().stream().forEach((column) -> {
+            column.keySet().stream().forEach((rowKey) -> {
+                column.put(rowKey, Integer.MAX_VALUE);
+            });
+        });
+        distances.get(0).put(0, 0);
+        while (!toBeUpdated.isEmpty()) {
+            distPoint = toBeUpdated.removeFirst();
+            for (i = 0; i < directions.length; i++) {
+                currentDir = directions[i];
+                adjacent[0] = distPoint[0] + currentDir[0];
+                adjacent[1] = distPoint[1] + currentDir[1];
+                if (distances.containsKey(adjacent[0]) && distances.get(adjacent[0]).containsKey(adjacent[1])
+                        && board.get(adjacent[0]).get(adjacent[1]) > 0
+                        && distances.get(adjacent[0]).get(adjacent[1]) > distances.get(distPoint[0]).get(distPoint[1])) {
+                    distances.get(adjacent[0]).put(adjacent[1], distances.get(distPoint[0]).get(distPoint[1]) + 1);
+                    toBeUpdated.add(new int[]{adjacent[0], adjacent[1]});
+                }
+            }
+        }
+        minX = Integer.MAX_VALUE;
+        maxX = Integer.MIN_VALUE;
+        minY = Integer.MAX_VALUE;
+        maxY = Integer.MIN_VALUE;
+        for (Integer X : board.keySet()) {
+            minX = X < minX ? X : minX;
+            maxX = X > maxX ? X : maxX;
+            for (Integer Y : board.get(X).keySet()) {
+                minY = Y < minY ? Y : minY;
+                maxY = Y > maxY ? Y : maxY;
+            }
+        }
+        for (int y = maxY; y >= minY; y--) {
+            System.out.print(y + "\t");
+            for (int x = minX; x <= maxX; x++) {
+                if (!(board.containsKey(x) && board.get(x).containsKey(y))) {
+                    System.out.print(' ');
+                } else if (x == robotX && y == robotY) {
+                    System.out.print('R');
+                } else {
+                    switch (board.get(x).get(y)) {
+                        case 0:
+                            System.out.print('#');
+                            break;
+                        case 1:
+                            System.out.print('.');
+                            break;
+                        case 2:
+                            System.out.print('T');
+                            break;
+                        case -1:
+                            System.out.print('?');
+                    }
+                }
+            }
+            System.out.println();
+        }
+
+        return distances.get(target[0]).get(target[1]);
+    }
+
+    private static int challengeThirty(List<String> input) {
+        Amplifier amp = new Amplifier(parseIntcode(input.get(0)));
+        LinkedList<Long> inputBuffer = new LinkedList<>();
+        amp.setInputBuffer(inputBuffer);
+        LinkedList<Long> outputBuffer = amp.getOutputBuffer();
+        HashMap<Integer, HashMap<Integer, Integer>> board = new HashMap<>();
+        HashMap<Integer, HashMap<Integer, Integer>> distances = new HashMap<>();
+        LinkedList<int[]> unexplored = new LinkedList<>();
+        LinkedList<int[]> toBeUpdated = new LinkedList<>();
+        board.put(0, new HashMap<>());
+        board.get(0).put(0, 1);
+        distances.put(0, new HashMap<>());
+        distances.get(0).put(0, 1);
+        int robotX = 0, robotY = 0, retVal = 0, i, min, nextMove = 0;
+        int minX, maxX, minY, maxY;
+        int[] currentDir, point, distPoint, adjacent = new int[2], target = new int[2];
+        int[][] directions = new int[][]{{0, 1}, {0, -1}, {-1, 0}, {1, 0}};
+        do {
+            for (i = 0; i < directions.length; i++) {
+                currentDir = directions[i];
+                adjacent[0] = robotX + currentDir[0];
+                adjacent[1] = robotY + currentDir[1];
+                if (!board.containsKey(adjacent[0])) {
+                    board.put(adjacent[0], new HashMap<>());
+                    distances.put(adjacent[0], new HashMap<>());
+                }
+                if (!board.get(adjacent[0]).containsKey(adjacent[1])) {
+                    board.get(adjacent[0]).put(adjacent[1], -1);
+                    distances.get(adjacent[0]).put(adjacent[1], 0);
+                    unexplored.add(new int[]{adjacent[0], adjacent[1]});
+                }
+            }
+            point = unexplored.removeLast();
+            toBeUpdated.add(point);
+            distances.values().stream().forEach((column) -> {
+                column.keySet().stream().forEach((rowKey) -> {
+                    column.put(rowKey, Integer.MAX_VALUE);
+                });
+            });
+            distances.get(point[0]).put(point[1], 0);
+            while (!toBeUpdated.isEmpty()) {
+                distPoint = toBeUpdated.removeFirst();
+                for (i = 0; i < directions.length; i++) {
+                    currentDir = directions[i];
+                    adjacent[0] = distPoint[0] + currentDir[0];
+                    adjacent[1] = distPoint[1] + currentDir[1];
+                    if (distances.containsKey(adjacent[0]) && distances.get(adjacent[0]).containsKey(adjacent[1])
+                            && board.get(adjacent[0]).get(adjacent[1]) > 0
+                            && distances.get(adjacent[0]).get(adjacent[1]) > distances.get(distPoint[0]).get(distPoint[1])) {
+                        distances.get(adjacent[0]).put(adjacent[1], distances.get(distPoint[0]).get(distPoint[1]) + 1);
+                        toBeUpdated.add(new int[]{adjacent[0], adjacent[1]});
+                    }
+                }
+            }
+            while (!(robotX == point[0] && robotY == point[1])) {
+                min = Integer.MAX_VALUE;
+                //Uncomment this and commented code below for more spam.
+                /*minX = Integer.MAX_VALUE;
+                maxX = Integer.MIN_VALUE;
+                minY = Integer.MAX_VALUE;
+                maxY = Integer.MIN_VALUE;
+                for (Integer X : board.keySet()) {
+                    minX = X < minX ? X : minX;
+                    maxX = X > maxX ? X : maxX;
+                    for (Integer Y : board.get(X).keySet()) {
+                        minY = Y < minY ? Y : minY;
+                        maxY = Y > maxY ? Y : maxY;
+                    }
+                }
+                for (int y = maxY; y >= minY; y--) {
+                    for (int x = minX; x <= maxX; x++) {
+                        if (!(board.containsKey(x) && board.get(x).containsKey(y))) {
+                            System.out.print(' ');
+                        } else if (x == robotX && y == robotY) {
+                            System.out.print('R');
+                        } else {
+                            switch (board.get(x).get(y)) {
+                                case 0:
+                                    System.out.print('#');
+                                    break;
+                                case 1:
+                                    System.out.print('.');
+                                    break;
+                                case -1:
+                                    System.out.print('?');
+                            }
+                        }
+                    }
+                    System.out.println();
+                }
+                System.out.println("Coordinates: " + robotX + " " + robotY);
+                System.out.println("Target: " + point[0] + " " + point[1]);*/
+                for (i = 0; i < directions.length; i++) {
+                    currentDir = directions[i];
+                    adjacent[0] = robotX + currentDir[0];
+                    adjacent[1] = robotY + currentDir[1];
+                    if (distances.get(adjacent[0]).get(adjacent[1]) < min) {
+                        min = distances.get(adjacent[0]).get(adjacent[1]);
+                        nextMove = i;
+                    }
+                    //System.out.println("Value of next field: " + distances.get(adjacent[0]).get(adjacent[1]));
+                }
+                //System.out.println("Next move: " + nextMove);
+                adjacent[0] = robotX + directions[nextMove][0];
+                adjacent[1] = robotY + directions[nextMove][1];
+                inputBuffer.add((long) nextMove + 1);
+                amp.runProgram();
+                retVal = outputBuffer.removeFirst().intValue();
+                robotX = adjacent[0];
+                robotY = adjacent[1];
+            }
+            board.get(adjacent[0]).put(adjacent[1], retVal);
+            if (retVal == 0) {
+                //Just bonked, take a step back. Easier than not stepping in the loop.
+                robotX -= directions[nextMove][0];
+                robotY -= directions[nextMove][1];
+            } else {
+                //Step successful. Add newly discovered unexplored tiles.
+                if (retVal == 2) {
+                    target[0] = robotX;
+                    target[1] = robotY;
+                }
+                for (i = 0; i < directions.length; i++) {
+                    currentDir = directions[i];
+                    adjacent[0] = robotX + currentDir[0];
+                    adjacent[1] = robotY + currentDir[1];
+                    if (!board.containsKey(adjacent[0])) {
+                        board.put(adjacent[0], new HashMap<>());
+                        distances.put(adjacent[0], new HashMap<>());
+                    }
+                    if (!board.get(adjacent[0]).containsKey(adjacent[1])) {
+                        board.get(adjacent[0]).put(adjacent[1], -1);
+                        distances.get(adjacent[0]).put(adjacent[1], 0);
+                        unexplored.add(new int[]{adjacent[0], adjacent[1]});
+                    }
+                }
+            }
+        } while (!unexplored.isEmpty());
+        toBeUpdated.add(target);
+        distances.values().stream().forEach((column) -> {
+            column.keySet().stream().forEach((rowKey) -> {
+                column.put(rowKey, Integer.MAX_VALUE);
+            });
+        });
+        //For those curious what I changed: Since 29 already creates a full map
+        //of the area (because I was too lazy to implement simple path discovery
+        //and pathfinding from target to 0/0), all I had to change was to change
+        //the origin point to the target position. Since Dijkstra's algorithm
+        //works miracles, it is always accurate to take the step distance from
+        //the target to the farthest point as the time for the oxygen to spread.
+        distances.get(target[0]).put(target[1], 0);
+        int max = Integer.MIN_VALUE;
+        while (!toBeUpdated.isEmpty()) {
+            distPoint = toBeUpdated.removeFirst();
+            for (i = 0; i < directions.length; i++) {
+                currentDir = directions[i];
+                adjacent[0] = distPoint[0] + currentDir[0];
+                adjacent[1] = distPoint[1] + currentDir[1];
+                if (distances.containsKey(adjacent[0]) && distances.get(adjacent[0]).containsKey(adjacent[1])
+                        && board.get(adjacent[0]).get(adjacent[1]) > 0
+                        && distances.get(adjacent[0]).get(adjacent[1]) > distances.get(distPoint[0]).get(distPoint[1])) {
+                    distances.get(adjacent[0]).put(adjacent[1], distances.get(distPoint[0]).get(distPoint[1]) + 1);
+                    toBeUpdated.add(new int[]{adjacent[0], adjacent[1]});
+                    max = distances.get(adjacent[0]).get(adjacent[1]) > max ? distances.get(adjacent[0]).get(adjacent[1]) : max;
+                }
+            }
+        }
+        minX = Integer.MAX_VALUE;
+        maxX = Integer.MIN_VALUE;
+        minY = Integer.MAX_VALUE;
+        maxY = Integer.MIN_VALUE;
+        for (Integer X : board.keySet()) {
+            minX = X < minX ? X : minX;
+            maxX = X > maxX ? X : maxX;
+            for (Integer Y : board.get(X).keySet()) {
+                minY = Y < minY ? Y : minY;
+                maxY = Y > maxY ? Y : maxY;
+            }
+        }
+        for (int y = maxY; y >= minY; y--) {
+            System.out.print(y + "\t");
+            for (int x = minX; x <= maxX; x++) {
+                if (!(board.containsKey(x) && board.get(x).containsKey(y))) {
+                    System.out.print(' ');
+                } else if (x == robotX && y == robotY) {
+                    System.out.print('R');
+                } else {
+                    switch (board.get(x).get(y)) {
+                        case 0:
+                            System.out.print('#');
+                            break;
+                        case 1:
+                            System.out.print('.');
+                            break;
+                        case 2:
+                            System.out.print('T');
+                            break;
+                        case -1:
+                            System.out.print('?');
+                    }
+                }
+            }
+            System.out.println();
+        }
+
+        return max;
+    }
+
+    private static long[] parseIntcode(String input) {
+        String[] numbers = input.split(",");
+        long[] program = new long[numbers.length];
+        HashMap<String, Long> numberCache = new HashMap<>();
+        for (int i = 0; i < numbers.length; i++) {
+            if (!numberCache.containsKey(numbers[i])) {
+                numberCache.put(numbers[i], Long.parseLong(numbers[i]));
+            }
+            program[i] = numberCache.get(numbers[i]);
+        }
+        return program;
+    }
+
+    private static int challengeThirtyOne(List<String> input) {
+        char[] asArray = input.get(0).toCharArray();
+        int[] number = new int[asArray.length];
+        int[] nextNumber = new int[asArray.length];
+        int[] basePattern = new int[]{0, 1, 0, -1};
+        int[][] patterns = new int[asArray.length][asArray.length];
+        int i, j, k, element, phase;
+        for (i = 0; i < asArray.length; i++) {
+            number[i] = asArray[i] - '0';
+            for (j = 0; j * (i + 1) < asArray.length + 1; j++) {
+                k = j == 0 ? 1 : 0;
+                for (; k <= i; k++) {
+                    if (j * (i + 1) + k - 1 < patterns[i].length) {
+                        patterns[i][j * (i + 1) + k - 1] = basePattern[j % 4];
+                    }
+                }
+            }
+        }
+        for (phase = 0; phase < 100; phase++) {
+            for (i = 0; i < number.length; i++) {
+                element = 0;
+                for (j = 0; j < number.length; j++) {
+                    element += number[j] * patterns[i][j];
+                }
+                nextNumber[i] = Math.abs(element % 10);
+            }
+            for (i = 0; i < number.length; i++) {
+                number[i] = nextNumber[i];
+            }
+        }
+        int result = 0;
+        for (i = 0; i < 8; i++) {
+            result *= 10;
+            result += number[i];
+        }
+        return result;
+    }
+
+    private static int challengeThirtyTwo(List<String> input) {
+
         return 0;
     }
 }
