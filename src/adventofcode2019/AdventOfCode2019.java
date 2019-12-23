@@ -9,6 +9,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -129,6 +130,26 @@ public class AdventOfCode2019 {
                 break;
             case 32:
                 result = challengeThirtyTwo(input);
+                break;
+            case 33:
+                result = challengeThirtyThree(input);
+                break;
+            case 34:
+                result = challengeThirtyFour(input);
+                break;
+
+            case 41:
+                result = challengeFortyOne(input);
+                break;
+            case 42:
+                result = challengeFortyTwo(input);
+                break;
+
+            case 45:
+                result = challengeFortyFive(input);
+                break;
+            case 46:
+                result = challengeFortySix(input);
                 break;
             default:
                 System.out.println("lolno");
@@ -1592,6 +1613,9 @@ public class AdventOfCode2019 {
         //the origin point to the target position. Since Dijkstra's algorithm
         //works miracles, it is always accurate to take the step distance from
         //the target to the farthest point as the time for the oxygen to spread.
+        //
+        //It would be significantly cleaner code to simply pass a boolean to method
+        //29. It really would be. But I didn't feel like it.
         distances.get(target[0]).put(target[1], 0);
         int max = Integer.MIN_VALUE;
         while (!toBeUpdated.isEmpty()) {
@@ -1704,5 +1728,208 @@ public class AdventOfCode2019 {
     private static int challengeThirtyTwo(List<String> input) {
 
         return 0;
+    }
+
+    private static int challengeThirtyThree(List<String> input) {
+        Amplifier amp = new Amplifier(parseIntcode(input.get(0)));
+        LinkedList<Long> outputBuffer = amp.getOutputBuffer();
+        amp.runProgram();
+        boolean isIntersection;
+        int lineSize = 0, result = 0, x, y, i;
+        int[][] directions = new int[][]{{0, 0}, {0, 1}, {1, 0}, {0, -1}, {-1, 0}};
+        while (outputBuffer.get(lineSize) != 10) {
+            lineSize++;
+        }
+        char current = 0;
+        char[][] view = new char[outputBuffer.size() / lineSize][lineSize];
+        for (y = 0; y < view.length; y++) {
+            for (x = 0; x < view[y].length; x++) {
+                do {
+                    current = (char) outputBuffer.remove().byteValue();
+                } while (current == 10);
+                view[y][x] = current;
+            }
+        }
+        for (y = 1; y < view.length - 1; y++) {
+            for (x = 1; x < view[y].length - 1; x++) {
+                isIntersection = true;
+                for (i = 0; i < directions.length; i++) {
+                    isIntersection = isIntersection && view[y + directions[i][0]][x + directions[i][1]] == '#';
+                }
+                if (isIntersection) {
+                    result += x * y;
+                    view[y][x] = 'O';
+                }
+            }
+        }
+        for (y = 0; y < view.length; y++) {
+            for (x = 0; x < view[y].length; x++) {
+                System.out.print(view[y][x]);
+            }
+            System.out.println();
+        }
+        return result;
+    }
+
+    private static int challengeThirtyFour(List<String> input) {
+        Amplifier amp = new Amplifier(parseIntcode(input.get(0)));
+        LinkedList<Long> outputBuffer = amp.getOutputBuffer();
+        amp.runProgram();
+        boolean isIntersection;
+        int lineSize = 0, result = 0, x, y, i;
+        int[][] directions = new int[][]{{0, 0}, {0, 1}, {1, 0}, {0, -1}, {-1, 0}};
+        while (outputBuffer.get(lineSize) != 10) {
+            lineSize++;
+        }
+        char current = 0;
+        char[][] view = new char[outputBuffer.size() / lineSize][lineSize];
+        for (y = 0; y < view.length; y++) {
+            for (x = 0; x < view[y].length; x++) {
+                do {
+                    current = (char) outputBuffer.remove().byteValue();
+                } while (current == 10);
+                view[y][x] = current;
+            }
+        }
+        for (y = 1; y < view.length - 1; y++) {
+            for (x = 1; x < view[y].length - 1; x++) {
+                isIntersection = true;
+                for (i = 0; i < directions.length; i++) {
+                    isIntersection = isIntersection && view[y + directions[i][0]][x + directions[i][1]] == '#';
+                }
+                if (isIntersection) {
+                    result += x * y;
+                    view[y][x] = 'O';
+                }
+            }
+        }
+        for (y = 0; y < view.length; y++) {
+            for (x = 0; x < view[y].length; x++) {
+                System.out.print(view[y][x]);
+            }
+            System.out.println();
+        }
+        directions = Arrays.copyOfRange(directions, 1, 5);
+        return result;
+    }
+
+    private static int challengeFortyOne(List<String> input) {
+        Amplifier amp = new Amplifier(parseIntcode(input.get(0)));
+        amp.inputString("NOT T T\n"
+                + "AND A T\n"
+                + "AND B T\n"
+                + "AND C T\n"
+                + "NOT T T\n"
+                + "AND D T\n"
+                + "OR T J\n"
+                + "WALK\n");
+        amp.runProgram();
+        int result = 0;
+        while (!amp.getOutputBuffer().isEmpty()) {
+            result = amp.getOutputBuffer().remove().intValue();
+            System.out.print((char) result);
+        }
+        return result;
+    }
+
+    private static int challengeFortyTwo(List<String> input) {
+        Amplifier amp = new Amplifier(parseIntcode(input.get(0)));
+        amp.inputString("OR E T\n"
+                + "OR H T\n"
+                + "OR A J\n"
+                + "AND B J\n"
+                + "AND C J\n"
+                + "NOT J J\n"
+                + "AND T J\n"
+                + "AND D J\n"
+                + "RUN\n");
+        amp.runProgram();
+        int result = 0;
+        while (!amp.getOutputBuffer().isEmpty()) {
+            result = amp.getOutputBuffer().remove().intValue();
+            System.out.print((char) result);
+        }
+        return result;
+    }
+
+    private static int challengeFortyFive(List<String> input) {
+        long[] program = parseIntcode(input.get(0));
+        Amplifier[] amps = new Amplifier[50];
+        int i, address = 0;
+        LinkedList<Long> outputBuffer;
+        for (i = 0; i < amps.length; i++) {
+            amps[i] = new Amplifier(program);
+            amps[i].getInputBuffer().add((long) i);
+            amps[i].getInputBuffer().add((long) -1);
+            //No, this is not proper.
+            //Yes, the only time that the amps are not effectively busy waiting
+            //for input, being blocked despite the text claiming otherwise,
+            //is on their SECOND input instruction, seemingly as a test that
+            //you actually do provide -1 instead of simply busy waiting.
+            //To which I say: Raspberries to you, good sir. I shall wait all I want.
+        }
+        long x = 0, y = 0;
+        while (address != 255) {
+            for (i = 0; i < amps.length; i++) {
+                amps[i].runProgram();
+                outputBuffer = amps[i].getOutputBuffer();
+                while (!outputBuffer.isEmpty()) {
+                    address = outputBuffer.removeFirst().intValue();
+                    x = outputBuffer.removeFirst();
+                    y = outputBuffer.removeFirst();
+                    if (address == 255) {
+                        return Long.valueOf(y).intValue();
+                    }
+                    amps[address].getInputBuffer().add(x);
+                    amps[address].getInputBuffer().add(y);
+                }
+            }
+        }
+        return 0;
+    }
+
+    private static int challengeFortySix(List<String> input) {
+        long[] program = parseIntcode(input.get(0));
+        Amplifier[] amps = new Amplifier[50];
+        int i, address = 0, idleAmps;
+        LinkedList<Long> outputBuffer;
+        for (i = 0; i < amps.length; i++) {
+            amps[i] = new Amplifier(program);
+            amps[i].getInputBuffer().add((long) i);
+            amps[i].getInputBuffer().add((long) -1);
+        }
+        long x = 0, y = 0, natX = 0, natY = 0;
+        HashSet<Long> usedValues = new HashSet<>();
+        while (true) {
+            idleAmps = 0;
+            for (i = 0; i < amps.length; i++) {
+                amps[i].runProgram();
+                outputBuffer = amps[i].getOutputBuffer();
+                if (amps[i].getOutputBuffer().isEmpty()) {
+                    idleAmps++;
+                }
+                while (!outputBuffer.isEmpty()) {
+                    address = outputBuffer.removeFirst().intValue();
+                    x = outputBuffer.removeFirst();
+                    y = outputBuffer.removeFirst();
+                    if (address == 255) {
+                        natX = x;
+                        natY = y;
+                    } else {
+                        amps[address].getInputBuffer().add(x);
+                        amps[address].getInputBuffer().add(y);
+                    }
+                }
+            }
+            if (idleAmps == 50) {
+                if (usedValues.contains(natY)) {
+                    break;
+                }
+                usedValues.add(natY);
+                amps[0].getInputBuffer().add(natX);
+                amps[0].getInputBuffer().add(natY);
+            }
+        }
+        return Long.valueOf(natY).intValue();
     }
 }

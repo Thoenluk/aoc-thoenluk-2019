@@ -16,7 +16,7 @@ public class Amplifier {
 
     private HashMap<Long, Long> program, originalProgram;
     private long instPointer = 0, relativeBase = 0;
-    private LinkedList<Long> inputBuffer;
+    private LinkedList<Long> inputBuffer = new LinkedList<>();
     private LinkedList<Long> outputBuffer = new LinkedList<>();
     private final long[] argsByOpcode = new long[100];
 
@@ -105,6 +105,13 @@ public class Amplifier {
             }
         }
         return false;
+    }
+
+    public void inputString(String string) {
+        char[] chars = string.toCharArray();
+        for (int i = 0; i < chars.length; i++) {
+            inputBuffer.add((long) chars[i]);
+        }
     }
 
     private void add(long[] args, boolean[] argIsPos) {
