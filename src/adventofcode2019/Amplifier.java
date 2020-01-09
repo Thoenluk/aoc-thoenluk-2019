@@ -19,6 +19,7 @@ public class Amplifier {
     private LinkedList<Long> inputBuffer = new LinkedList<>();
     private LinkedList<Long> outputBuffer = new LinkedList<>();
     private final long[] argsByOpcode = new long[100];
+    private static final HashMap<String, Long> NUMBER_CACHE = new HashMap<>();
 
     public Amplifier(long[] program) {
         this.program = new HashMap<>();
@@ -26,6 +27,49 @@ public class Amplifier {
         for (int i = 0; i < program.length; i++) {
             this.program.put(Long.valueOf(i), program[i]);
             this.originalProgram.put(Long.valueOf(i), program[i]);
+        }
+        argsByOpcode[1] = 3;
+        argsByOpcode[2] = 3;
+        argsByOpcode[3] = 1;
+        argsByOpcode[4] = 1;
+        argsByOpcode[5] = 2;
+        argsByOpcode[6] = 2;
+        argsByOpcode[7] = 3;
+        argsByOpcode[8] = 3;
+        argsByOpcode[9] = 1;
+        argsByOpcode[99] = 0;
+    }
+
+    public Amplifier(String savedState) {
+        this.program = new HashMap<>();
+        this.originalProgram = new HashMap<>();
+        String[] lines = savedState.split("\n");
+        String[] location;
+        String[] _program = lines[0].substring(10, lines[0].length() - 1).split(", ");
+        for (String pair : _program) {
+            location = pair.split("=");
+            program.put(stringToLong(location[0]), stringToLong(location[1]));
+        }
+        String[] _originalProgram = lines[1].substring(19, lines[1].length() - 1).split(", ");
+        for (String pair : _originalProgram) {
+            location = pair.split("=");
+            originalProgram.put(stringToLong(location[0]), stringToLong(location[1]));
+        }
+        String _instPointer = lines[2].substring(21);
+        instPointer = stringToLong(_instPointer);
+        String _relativeBase = lines[3].substring(15);
+        relativeBase = stringToLong(_relativeBase);
+        String[] _inputBuffer = lines[4].substring(23, lines[4].length() - 1).split(", ");
+        if (!_inputBuffer[0].isEmpty()) {
+            for (String value : _inputBuffer) {
+                inputBuffer.add(stringToLong(value));
+            }
+        }
+        String[] _outputBuffer = lines[5].substring(24, lines[5].length() - 1).split(", ");
+        if (!_outputBuffer[0].isEmpty()) {
+            for (String value : _outputBuffer) {
+                outputBuffer.add(stringToLong(value));
+            }
         }
         argsByOpcode[1] = 3;
         argsByOpcode[2] = 3;
@@ -201,10 +245,72 @@ public class Amplifier {
         this.outputBuffer = buffer;
     }
 
+    @Override
+    public String toString() {
+        String prog = "Program: " + program.toString() + "\n";
+        String originalProg = "Original program: " + originalProgram.toString() + "\n";
+        String instruction = "Instruction pointer: " + instPointer + "\n";
+        String relBase = "Relative base: " + relativeBase + "\n";
+        String input = "Input buffer content: " + inputBuffer.toString() + "\n";
+        String output = "Output buffer content: " + outputBuffer.toString();
+        return prog + originalProg + instruction + relBase + input + output;
+    }
+
+    public String outputAsString() {
+        String output = "";
+        for (Long value : outputBuffer) {
+            output += (char) value.intValue();
+        }
+        return output;
+    }
+
+    public String flushOutput() {
+        String output = outputAsString();
+        clearOutput();
+        return output;
+    }
+
+    public void clearOutput() {
+        outputBuffer.clear();
+    }
+
     public void resetProgram() {
         this.program = (HashMap<Long, Long>) originalProgram.clone();
         instPointer = 0;
         relativeBase = 0;
+    }
+
+    public void loadState(String state) {
+        program.clear();
+        originalProgram.clear();
+        String[] lines = state.split("\n");
+        String[] location;
+        String[] _program = lines[0].substring(10, lines[0].length() - 1).split(", ");
+        for (String pair : _program) {
+            location = pair.split("=");
+            program.put(stringToLong(location[0]), stringToLong(location[1]));
+        }
+        String[] _originalProgram = lines[1].substring(19, lines[1].length() - 1).split(", ");
+        for (String pair : _originalProgram) {
+            location = pair.split("=");
+            originalProgram.put(stringToLong(location[0]), stringToLong(location[1]));
+        }
+        String _instPointer = lines[2].substring(21);
+        instPointer = stringToLong(_instPointer);
+        String _relativeBase = lines[3].substring(15);
+        relativeBase = stringToLong(_relativeBase);
+        String[] _inputBuffer = lines[4].substring(23, lines[4].length() - 1).split(", ");
+        if (!_inputBuffer[0].isEmpty()) {
+            for (String value : _inputBuffer) {
+                inputBuffer.add(stringToLong(value));
+            }
+        }
+        String[] _outputBuffer = lines[5].substring(24, lines[5].length() - 1).split(", ");
+        if (!_outputBuffer[0].isEmpty()) {
+            for (String value : _outputBuffer) {
+                outputBuffer.add(stringToLong(value));
+            }
+        }
     }
 
     private long safeGet(long index) {
@@ -212,6 +318,13 @@ public class Amplifier {
             program.put(index, (long) 0);
         }
         return program.get(index);
+    }
+
+    private long stringToLong(String value) {
+        if (!NUMBER_CACHE.containsKey(value)) {
+            NUMBER_CACHE.put(value, Long.parseLong(value));
+        }
+        return NUMBER_CACHE.get(value);
     }
 
 }

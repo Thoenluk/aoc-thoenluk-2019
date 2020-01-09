@@ -5,16 +5,20 @@
  */
 package adventofcode2019;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Stream;
 
 /**
  *
@@ -151,6 +155,14 @@ public class AdventOfCode2019 {
             case 46:
                 result = challengeFortySix(input);
                 break;
+            case 47:
+                result = challengeFortySeven(input);
+                break;
+
+            case 49:
+                result = challengeFortyNine(input);
+                break;
+
             default:
                 System.out.println("lolno");
         }
@@ -1931,5 +1943,265 @@ public class AdventOfCode2019 {
             }
         }
         return Long.valueOf(natY).intValue();
+    }
+
+    private static int challengeFortySeven(List<String> input) {
+        int lineLength = input.get(0).length();
+        char[][] field = new char[input.size()][lineLength];
+        char[][] nextField = new char[field.length][field[0].length];
+        int i, j, x, y, neighbours;
+        int[][] dirs = new int[][]{{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
+        String line, state = "";
+        HashSet<String> visitedStates = new HashSet<>();
+        for (i = 0; i < input.size(); i++) {
+            line = input.get(i);
+            for (j = 0; j < lineLength; j++) {
+                field[i][j] = line.charAt(j);
+            }
+        }
+        state = "";
+        for (char[] row : field) {
+            state += new String(row);
+        }
+        visitedStates.add(state);
+        System.out.println(state);
+        while (true) {
+            for (i = 0; i < field.length; i++) {
+                for (j = 0; j < field[i].length; j++) {
+                    neighbours = 0;
+                    for (int[] direction : dirs) {
+                        x = i + direction[0];
+                        y = j + direction[1];
+                        if (0 <= x && x < field.length && 0 <= y && y < field[i].length && field[x][y] == '#') {
+                            neighbours++;
+                        }
+                    }
+                    if (neighbours == 1 || (field[i][j] == '.' && neighbours == 2)) {
+                        nextField[i][j] = '#';
+                    } else {
+                        nextField[i][j] = '.';
+                    }
+                }
+            }
+            for (i = 0; i < field.length; i++) {
+                for (j = 0; j < field[i].length; j++) {
+                    field[i][j] = nextField[i][j];
+                }
+            }
+            state = "";
+            for (char[] row : field) {
+                state += new String(row);
+            }
+            if (visitedStates.contains(state)) {
+                break;
+            } else {
+                visitedStates.add(state);
+            }
+            System.out.println(state);
+        }
+        int result = 0;
+        int value = 1;
+        for (i = 0; i < field.length; i++) {
+            for (j = 0; j < field[i].length; j++) {
+                if (field[i][j] == '#') {
+                    result += value;
+                }
+                value *= 2;
+            }
+        }
+        return result;
+    }
+
+    private static int challengeFortyNine(List<String> input) {
+        Amplifier amp = new Amplifier(parseIntcode(input.get(0)));
+        Scanner in = new Scanner(System.in);
+        String quicksave = "", savedOutput = "", currentOutput, room = "", line;
+        String checkpoint;
+        HashSet<String> inventory = new HashSet<>(), availableItems = new HashSet<>();
+        HashSet<String> desiredItems = new HashSet<>();
+        ArrayList<String> possibleItems = new ArrayList<>();
+        String[] splitHolder;
+        int i, j, limit;
+        amp.runProgram();
+        currentOutput = amp.flushOutput();
+        System.out.print(currentOutput);
+        program:
+        while (true) {
+            line = in.nextLine().toLowerCase();
+            switch (line) {
+                case "quit":
+                    break program;
+                case "save":
+                    System.out.println("Enter desired save name.");
+                    try (FileWriter writer = new FileWriter("droneGame/" + in.next() + ".txt")) {
+                        writer.write(amp.toString());
+                    } catch (Exception e) {
+                        System.out.println("Oh noes! Exception: " + e.getMessage());
+                    }
+                    break;
+                case "load":
+                    File saveFolder = new File("droneGame");
+                    File[] saves = saveFolder.listFiles();
+                    System.out.println("Which save game do you want to load?");
+                    for (i = 0; i < saves.length; i++) {
+                        System.out.println((i + 1) + " " + saves[i].getName().substring(0, saves[i].getName().length() - 4));
+                    }
+                    i = in.nextInt() - 1;
+                    StringBuilder builder = new StringBuilder();
+                    try (Stream<String> stream = Files.lines(saves[i].toPath())) {
+                        stream.forEach(s -> builder.append(s).append("\n"));
+                        amp.loadState(builder.toString());
+                    } catch (Exception e) {
+                        System.out.println("Oh noes! Exception: " + e.getMessage());
+                    }
+                    break;
+                case "qsave":
+                    quicksave = amp.toString();
+                    System.out.println("Successfully quicksaved! Next command?");
+                    savedOutput = currentOutput;
+                    break;
+                case "qload":
+                    if (!quicksave.equals("")) {
+                        amp.loadState(quicksave);
+                        System.out.println("Successfully quickloaded!");
+                        System.out.print(savedOutput);
+                    } else {
+                        System.out.println("No quicksave data exists!");
+                    }
+                    break;
+                case "room":
+                    System.out.print(room);
+                    break;
+                case "north":
+                case "south":
+                case "west":
+                case "east":
+                    amp.inputString(line + "\n");
+                    amp.runProgram();
+                    currentOutput = amp.flushOutput();
+                    System.out.print(currentOutput);
+                    room = currentOutput;
+                    availableItems.clear();
+                    splitHolder = room.split("Items here:\n");
+                    if (splitHolder.length > 1) {
+                        splitHolder = splitHolder[1].split("\n\n");
+                        splitHolder = splitHolder[0].split("\n");
+                        for (i = 0; i < splitHolder.length; i++) {
+                            availableItems.add(splitHolder[i].substring(2));
+                        }
+                    }
+                    break;
+                case "inv":
+                    amp.inputString(line + "\n");
+                    amp.runProgram();
+                    currentOutput = amp.flushOutput();
+                    System.out.print(currentOutput);
+                    inventory.clear();
+                    splitHolder = currentOutput.split("inventory:\n");
+                    if (splitHolder.length > 1) {
+                        splitHolder = splitHolder[1].split("\n\n");
+                        splitHolder = splitHolder[0].split("\n");
+                        for (i = 0; i < splitHolder.length; i++) {
+                            inventory.add(splitHolder[i].substring(2));
+                        }
+                    }
+                    break;
+                case "shuffle":
+                    System.out.println("Welcome to the inventory item shuffling assistant.\n"
+                            + "Available to you for shuffling are the following items:\n");
+                    for (String item : inventory) {
+                        System.out.println("- " + item);
+                    }
+                    for (String item : availableItems) {
+                        System.out.println("- " + item);
+                    }
+                    System.out.println("Type the names of the items you want to be in your inventory,"
+                            + " separated by commas and spaces. (such as "
+                            + "\"spool of cat6, jam, infinite loop\"");
+                    desiredItems.clear();
+                    for (String item : in.nextLine().split(", ")) {
+                        desiredItems.add(item);
+                    }
+                    sculptInventory(amp, inventory, availableItems, desiredItems);
+                    amp.runProgram();
+                    System.out.println("All done! Shuffled your items around. Ready for next command now.");
+                    amp.flushOutput();
+                    break;
+                case "bruteforce":
+                    System.out.println("Alright! Let's do this. In which direction is the checkpoint?");
+                    checkpoint = in.nextLine();
+                    desiredItems.clear();
+                    sculptInventory(amp, inventory, availableItems, desiredItems);
+                    possibleItems.clear();
+                    possibleItems.addAll(availableItems);
+                    limit = 1 << possibleItems.size();
+                    for (i = 0; i < limit; i++) {
+                        desiredItems.clear();
+                        for (j = 0; j < possibleItems.size(); j++) {
+                            if ((i >> j & 1) == 1) {
+                                desiredItems.add(possibleItems.get(j));
+                            }
+                        }
+                        //Let it be known, this algorithm could be vastly improved.
+                        //Rather than checking *all* possibilities, start with all
+                        //that contain one item. Some items may already be too
+                        //heavy by themselves and, as such, can't be part of the
+                        //solution. So when we search groups of n+1 items, we only
+                        //have to consider items that were light enough to still
+                        //make you too light by themselves. Then check all combinations
+                        //of two such items, again eliminating all combinations
+                        //that are too heavy (but not the items themselves - only
+                        //noting that those two items together won't be in the solution.)
+                        //To keep some amount of order, the items should be organised
+                        //as lists sorted by some criterion. That would make it
+                        //easy to avoid reusing combinations while selecting exactly
+                        //n items - something the bitwise solution struggles with.
+                        //This will greatly reduce the required search space.
+                        //However, all of my code here is massive overhead for
+                        //what is basically searching a depth 7 binary tree.
+                        sculptInventory(amp, inventory, availableItems, desiredItems);
+                        amp.runProgram();
+                        amp.clearOutput();
+                        amp.inputString(checkpoint + "\n");
+                        amp.runProgram();
+                        currentOutput = amp.flushOutput();
+                        if (currentOutput.charAt(103) != 'l') {
+                            System.out.print(currentOutput);
+                            break;
+                        }
+                    }
+                    break;
+                default:
+                    amp.inputString(line + "\n");
+                    amp.runProgram();
+                    currentOutput = amp.flushOutput();
+                    System.out.print(currentOutput);
+                    break;
+            }
+        }
+        return 0;
+    }
+
+    private static void sculptInventory(Amplifier amp, HashSet<String> inventory,
+            HashSet<String> availableItems, HashSet<String> desiredItems) {
+        String item;
+        Iterator it = inventory.iterator();
+        while (it.hasNext()) {
+            item = (String) it.next();
+            if (!desiredItems.contains(item)) {
+                amp.inputString("drop " + item + "\n");
+                it.remove();
+                availableItems.add(item);
+            }
+        }
+        it = availableItems.iterator();
+        while (it.hasNext()) {
+            item = (String) it.next();
+            if (desiredItems.contains(item)) {
+                amp.inputString("take " + item + "\n");
+                inventory.add(item);
+                it.remove();
+            }
+        }
     }
 }
