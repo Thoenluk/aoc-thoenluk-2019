@@ -18,7 +18,7 @@ public class Amplifier {
     private long instPointer = 0, relativeBase = 0;
     private LinkedList<Long> inputBuffer = new LinkedList<>();
     private LinkedList<Long> outputBuffer = new LinkedList<>();
-    private final long[] argsByOpcode = new long[100];
+    private final HashMap<Integer, Integer> argsByOpcode = new HashMap<>();
     private static final HashMap<String, Long> NUMBER_CACHE = new HashMap<>();
 
     public Amplifier(long[] program) {
@@ -28,16 +28,16 @@ public class Amplifier {
             this.program.put(Long.valueOf(i), program[i]);
             this.originalProgram.put(Long.valueOf(i), program[i]);
         }
-        argsByOpcode[1] = 3;
-        argsByOpcode[2] = 3;
-        argsByOpcode[3] = 1;
-        argsByOpcode[4] = 1;
-        argsByOpcode[5] = 2;
-        argsByOpcode[6] = 2;
-        argsByOpcode[7] = 3;
-        argsByOpcode[8] = 3;
-        argsByOpcode[9] = 1;
-        argsByOpcode[99] = 0;
+        argsByOpcode.put(1, 3);
+        argsByOpcode.put(2, 3);
+        argsByOpcode.put(3, 1);
+        argsByOpcode.put(4, 1);
+        argsByOpcode.put(5, 2);
+        argsByOpcode.put(6, 2);
+        argsByOpcode.put(7, 3);
+        argsByOpcode.put(8, 3);
+        argsByOpcode.put(9, 3);
+        argsByOpcode.put(99, 0);
     }
 
     public Amplifier(String savedState) {
@@ -71,16 +71,16 @@ public class Amplifier {
                 outputBuffer.add(stringToLong(value));
             }
         }
-        argsByOpcode[1] = 3;
-        argsByOpcode[2] = 3;
-        argsByOpcode[3] = 1;
-        argsByOpcode[4] = 1;
-        argsByOpcode[5] = 2;
-        argsByOpcode[6] = 2;
-        argsByOpcode[7] = 3;
-        argsByOpcode[8] = 3;
-        argsByOpcode[9] = 1;
-        argsByOpcode[99] = 0;
+        argsByOpcode.put(1, 3);
+        argsByOpcode.put(2, 3);
+        argsByOpcode.put(3, 1);
+        argsByOpcode.put(4, 1);
+        argsByOpcode.put(5, 2);
+        argsByOpcode.put(6, 2);
+        argsByOpcode.put(7, 3);
+        argsByOpcode.put(8, 3);
+        argsByOpcode.put(9, 3);
+        argsByOpcode.put(99, 0);
     }
 
     public boolean runProgram() {
@@ -98,8 +98,8 @@ public class Amplifier {
         boolean stop = false, instPointerModified;
         while (!stop && instPointer < program.size()) {
             instPointerModified = false;
-            opcode = (int) ((long) safeGet(instPointer) % 100);
-            for (j = 0; j < argsByOpcode[(int) opcode]; j++) {
+            opcode = (int) safeGet(instPointer) % 100;
+            for (j = 0; j < argsByOpcode.get(opcode); j++) {
                 args[j] = safeGet(instPointer + j + 1);
                 mode = safeGet(instPointer) / (long) Math.pow(10, j + 2) % 10;
                 if (mode == 1) {
@@ -145,7 +145,7 @@ public class Amplifier {
                     return true;
             }
             if (!instPointerModified) {
-                instPointer += argsByOpcode[opcode] + 1;
+                instPointer += argsByOpcode.get(opcode) + 1;
             }
         }
         return false;
